@@ -11,7 +11,11 @@ with open(
 ) as file:
     corpus = file.read()
 
+# Now all lowercase
+corpus = corpus.lower()
+
 corpus = corpus.split("\n\n")
+
 
 # 2: Leer los tokens correspondientes a stopwords desde el archivo "stopwords.txt"
 with open(
@@ -87,7 +91,7 @@ print(f"Type-Token Ratio (TTR): {len(fTokens) / nTokens:.2%}")
 nOneToken = sum(1 for freq in fTokens.values() if freq == 1)
 print(f"Hapax legomena: {nOneToken / nTokens:.2%}")
 
-# TODO 6: Obtener los 10 tokens más frecuentes y los 10 tokens más frecuentes sin stopwords
+# 6: Obtener los 10 tokens más frecuentes y los 10 tokens más frecuentes sin stopwords
 fTokens = dict(sorted(fTokens.items(), key=lambda item: item[1], reverse=True))
 fTokensNoStopwords = dict(
     sorted(fTokensNoStopwords.items(), key=lambda item: item[1], reverse=True)
@@ -105,14 +109,60 @@ for i, (token, freq) in enumerate(fTokensNoStopwords.items()):
         break
     print(f"{token}: {freq}")
 
-# TODO 7: Obtener bigramas y trigramas de tokens y de tokens sin stopwords
+# 7: Obtener bigramas y trigramas de tokens y de tokens sin stopwords
+fBigrams = {}
+fTrigrams = {}
+fBigramsNoStopwords = {}
+fTrigramsNoStopwords = {}
 
-# TODO 8: Obtener los 10 bigramas y trigramas más frecuentes
+for document in corpus:
+    words = document.split()
+    for i in range(len(words) - 1):
+
+        bigram = (words[i], words[i + 1])
+        if bigram in fBigrams:
+            fBigrams[bigram] += 1
+        else:
+            fBigrams[bigram] = 1
+        if all(word not in stopwords for word in bigram):
+            if bigram in fBigramsNoStopwords:
+                fBigramsNoStopwords[bigram] += 1
+            else:
+                fBigramsNoStopwords[bigram] = 1
+
+        if i < len(words) - 2:
+            trigram = (words[i], words[i + 1], words[i + 2])
+            if trigram in fTrigrams:
+                fTrigrams[trigram] += 1
+            else:
+                fTrigrams[trigram] = 1
+            if all(word not in stopwords for word in trigram):
+                if trigram in fTrigramsNoStopwords:
+                    fTrigramsNoStopwords[trigram] += 1
+                else:
+                    fTrigramsNoStopwords[trigram] = 1
+
+# 8: Obtener los 10 bigramas y trigramas más frecuentes
+fBigrams = dict(sorted(fBigrams.items(), key=lambda item: item[1], reverse=True))
+fTrigrams = dict(sorted(fTrigrams.items(), key=lambda item: item[1], reverse=True))
+
+print("10 bigramas más frecuentes:")
+for i, (bigram, freq) in enumerate(fBigrams.items()):
+    if i >= 10:
+        break
+    print(f"{' '.join(bigram)}: {freq}")
+
+print("10 trigramas más frecuentes:")
+for i, (trigram, freq) in enumerate(fTrigrams.items()):
+    if i >= 10:
+        break
+    print(f"{' '.join(trigram)}: {freq}")
 
 
+# 9: Mostrar gráfica de la Ley de Zipf
 def plot_zipfs_law(sorted_freqs, ranks):
     plt.figure(figsize=(6, 4))
-    plt.plot(ranks, sorted_freqs, marker=".", linestyle="solid")
+    plt.loglog(ranks, sorted_freqs, marker=".", linestyle="solid")
     plt.title("Zipf's Law")
     plt.xlabel("Rank")
     plt.ylabel("Frequency")
@@ -120,4 +170,4 @@ def plot_zipfs_law(sorted_freqs, ranks):
     plt.show()
 
 
-# TODO 9: Mostrar gráfica de la Ley de Zipf
+plot_zipfs_law(list(fTokens.values()), list(range(1, len(fTokens) + 1)))
