@@ -1,12 +1,28 @@
 # P0 - Estadísticas del corpus
 
 import matplotlib.pyplot as plt
+import os
 
-# TODO 1: Obtener los tokens del corpus del archivo "tiny_cc_news.txt", en el orden original
+currentDirectory = os.path.dirname(os.path.abspath(__file__))
 
-# TODO 2: Leer los tokens correspondientes a stopwords desde el archivo "stopwords.txt"
+# 1: Obtener los tokens del corpus del archivo "tiny_cc_news.txt", en el orden original
+with open(
+    os.path.join(currentDirectory, "tiny_cc_news.txt"), "r", encoding="utf-8"
+) as file:
+    corpus = file.read()
+
+corpus = corpus.split("\n\n")
+
+# 2: Leer los tokens correspondientes a stopwords desde el archivo "stopwords.txt"
+with open(
+    os.path.join(currentDirectory, "stopwords.txt"), "r", encoding="utf-8"
+) as file:
+    stopwords = file.readlines()
+
+stopwords = [word.strip() for word in stopwords]
 
 # TODO 3: Obtener diccionarios de frecuencias para tokens y tokens que no son stopwords
+
 
 # TODO 4: Obtener estadísticas básicas del corpus:
 # * Número de documentos
