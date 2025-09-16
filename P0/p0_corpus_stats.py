@@ -80,11 +80,30 @@ print(
     f"Longitud máxima de tokens sin stopwords: {max(len(token) for token in fTokensNoStopwords)}"
 )
 
-# TODO 5: Obtener métricas de riqueza léxica
+# 5: Obtener métricas de riqueza léxica
 # * Type-Token Ratio (TTR)
-# * Hapax legomena
+print(f"Type-Token Ratio (TTR): {len(fTokens) / nTokens:.2%}")
+# * Hapax legomena https://en.wikipedia.org/wiki/Hapax_legomenon
+nOneToken = sum(1 for freq in fTokens.values() if freq == 1)
+print(f"Hapax legomena: {nOneToken / nTokens:.2%}")
 
 # TODO 6: Obtener los 10 tokens más frecuentes y los 10 tokens más frecuentes sin stopwords
+fTokens = dict(sorted(fTokens.items(), key=lambda item: item[1], reverse=True))
+fTokensNoStopwords = dict(
+    sorted(fTokensNoStopwords.items(), key=lambda item: item[1], reverse=True)
+)
+
+print("10 tokens más frecuentes:")
+for i, (token, freq) in enumerate(fTokens.items()):
+    if i >= 10:
+        break
+    print(f"{token}: {freq}")
+
+print("10 tokens más frecuentes sin stopwords:")
+for i, (token, freq) in enumerate(fTokensNoStopwords.items()):
+    if i >= 10:
+        break
+    print(f"{token}: {freq}")
 
 # TODO 7: Obtener bigramas y trigramas de tokens y de tokens sin stopwords
 
