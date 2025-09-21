@@ -13,13 +13,13 @@ class DFT:
         for w in words:
             alphabet += list(w)
         alphabet = set(alphabet)
-        
+
         # Build states
         self.states = {""}
         for w in words:
             for i in range(1, len(w) + 1):
                 self.states.add(w[:i])
-        
+
         # Build transitions
         for state in self.states:
             for sym in alphabet:
@@ -33,7 +33,7 @@ class DFT:
 
     def transduce(self, word):
         nope = ["#", "N", "O", "P", "E"]
-        
+
         self.reset()
         for ch in word:
             if (self.state, ch) not in self.transitions:
