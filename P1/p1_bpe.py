@@ -1,4 +1,5 @@
 from typing import Dict, Iterable, List, Optional, Tuple
+from collections import Counter
 
 
 class ByteLevelBPE:
@@ -11,8 +12,8 @@ class ByteLevelBPE:
 
     def __init__(self):
         self.merges: List[Tuple[Tuple[int, ...], Tuple[int, ...]]] = []
-        self.vocab: Dict[Tuple[int, ...], int] = {}
-        self.id2bytes: List[Tuple[int, ...]] = []
+        self.vocab: Dict[Tuple[int, ...], int] = {(i,): i for i in range(256)}
+        self.id2bytes: List[Tuple[int, ...]] = [(i,) for i in range(256)]
 
     @staticmethod
     def _to_byte_tokens(s: str) -> List[Tuple[int, ...]]:
@@ -29,7 +30,11 @@ class ByteLevelBPE:
         """
         Obtiene las frecuencias de pares de tokens adyacentes en todas las líneas
         """
-        return {}  # TODO
+        return Counter(
+            (line[i], line[i + 1])
+            for line in lines_tokens
+            for i in range(len(line) - 1)
+        )
 
     @staticmethod
     def _merge_in_line(
