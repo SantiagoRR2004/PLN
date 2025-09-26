@@ -33,10 +33,12 @@ class ByteLevelBPE:
         """
         Obtiene las frecuencias de pares de tokens adyacentes en todas las líneas
         """
-        return Counter(
-            (line[i], line[i + 1])
-            for line in lines_tokens
-            for i in range(len(line) - 1)
+        return dict(
+            Counter(
+                (line[i], line[i + 1])
+                for line in lines_tokens
+                for i in range(len(line) - 1)
+            )
         )
 
     @staticmethod
@@ -72,11 +74,34 @@ class ByteLevelBPE:
         lines: Iterable[str],
         vocab_size: int = 1000,
         max_merges: Optional[int] = None,
-    ):
+    ) -> None:
         """
         Aprende las fusiones del BPE y construye los vocabularios.
         """
-        # TODO
+        # Convert lines to tokens
+        lines_tokens = [self._to_byte_tokens(line) for line in lines]
+
+        while len(self.vocab) < vocab_size and (
+            max_merges is None or len(self.merges) < max_merges
+        ):
+            # Count pairs
+            pairs = self._count_pairs(lines_tokens)
+
+            # Get most common pair
+            mostCommon = max(pairs, key=pairs.get, default=None)
+
+            # Add to merges
+            self.merges.append(mostCommon)
+
+            # Create new token
+            newToken = mostCommon[0] + mostCommon[1]
+            self.vocab[newToken] = len(self.vocab)
+            self.id2bytes.append(newToken)
+
+            # Update the line_tokens
+            lines_tokens = [
+                self._merge_in_line(line, mostCommon) for line in lines_tokens
+            ]
 
     def encode(self, text: str) -> List[int]:
         """
