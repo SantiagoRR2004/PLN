@@ -23,21 +23,29 @@ class ByteLevelBPE:
         return [(x,) for x in b]
 
     @staticmethod
-    def _count_pairs(lines_tokens: List[List[Tuple[int, ...]]]) -> Dict[Tuple[Tuple[int, ...], Tuple[int, ...]], int]:
+    def _count_pairs(
+        lines_tokens: List[List[Tuple[int, ...]]],
+    ) -> Dict[Tuple[Tuple[int, ...], Tuple[int, ...]], int]:
         """
         Obtiene las frecuencias de pares de tokens adyacentes en todas las líneas
         """
         return {}  # TODO
 
     @staticmethod
-    def _merge_in_line(line: List[Tuple[int, ...]],
-                       pair: Tuple[Tuple[int, ...], Tuple[int, ...]]) -> List[Tuple[int, ...]]:
+    def _merge_in_line(
+        line: List[Tuple[int, ...]], pair: Tuple[Tuple[int, ...], Tuple[int, ...]]
+    ) -> List[Tuple[int, ...]]:
         """
         Fusiona todas ocurrencias del par `pair` en una línea (sin solapamiento)
         """
         return []  # TODO
 
-    def train(self, lines: Iterable[str], vocab_size: int = 1000, max_merges: Optional[int] = None):
+    def train(
+        self,
+        lines: Iterable[str],
+        vocab_size: int = 1000,
+        max_merges: Optional[int] = None,
+    ):
         """
         Aprende las fusiones del BPE y construye los vocabularios.
         """
@@ -53,17 +61,17 @@ class ByteLevelBPE:
         """
         Convierte una lista de token IDs en texto.
         """
-        return ""  # TODO 
-    
+        return ""  # TODO
+
     def tokenize(self, text: str) -> List[str]:
         """
         Tokeniza un texto.
         """
-        return [""]  # TODO 
+        return [""]  # TODO
 
 
 if __name__ == "__main__":
-    # TODO 
+    # TODO
     # Uso:
     # python p1_bpe.py train <input_train_corpus> <output_model_file>
     # python p1_bpe.py eval <input_model_file> <input_text>
