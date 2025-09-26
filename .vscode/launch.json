@@ -1,21 +1,25 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Python: Train BPE",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/P1/p1_bpe.py",
-            "console": "integratedTerminal",
-            "args": ["train", "${workspaceFolder}/P0/tiny_cc_news.txt", "./bpe_model.pkl"]
-        },
-        {
-            "name": "Python: Eval BPE",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/P1/p1_bpe.py",
-            "console": "integratedTerminal",
-            "args": ["eval", "./bpe_model.pkl", "hola mundo"]
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Train BPE",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/P1/p1_bpe.py",
+      "console": "integratedTerminal",
+      "args": [
+        "train",
+        "${workspaceFolder}/P0/tiny_cc_news.txt",
+        "./bpe_model.pkl"
+      ]
+    },
+    {
+      "name": "Python: Eval BPE",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/P1/p1_bpe.py",
+      "console": "integratedTerminal",
+      "args": ["eval", "./bpe_model.pkl", "hola mundo"]
+    }
+  ]
 }
