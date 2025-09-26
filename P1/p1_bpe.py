@@ -82,7 +82,14 @@ class ByteLevelBPE:
         """
         Convierte el texto de entrada en una lista de token IDs.
         """
-        return []  # TODO
+        tokens = self._to_byte_tokens(text)
+
+        # Now we apply merges in order
+        for merge in self.merges:
+            tokens = [self._merge_in_line(line, merge) for line in tokens]
+
+        # Convert tokens to IDs
+        return [self.vocab[token] for token in tokens]
 
     def decode(self, ids: List[int]) -> str:
         """
