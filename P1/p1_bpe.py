@@ -37,8 +37,27 @@ class ByteLevelBPE:
     ) -> List[Tuple[int, ...]]:
         """
         Fusiona todas ocurrencias del par `pair` en una línea (sin solapamiento)
+
+        Args:
+            - line: list of tokens
+            - pair: pair of tokens to merge
+
+        Returns:
+            - new line with the pair merged
         """
-        return []  # TODO
+        newLine = []
+
+        i = 0
+        # Iterate finding pairs
+        while i < len(line):
+            if i < len(line) - 1 and (line[i], line[i + 1]) == pair:
+                newLine.append(pair[0] + pair[1])
+                i += 2
+            else:
+                newLine.append(line[i])
+                i += 1
+
+        return newLine
 
     def train(
         self,
