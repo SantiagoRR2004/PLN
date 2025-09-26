@@ -1,6 +1,9 @@
 from typing import Dict, Iterable, List, Optional, Tuple
 from collections import Counter
 
+import argparse
+import pickle
+
 
 class ByteLevelBPE:
     """
@@ -99,4 +102,38 @@ if __name__ == "__main__":
     # Uso:
     # python p1_bpe.py train <input_train_corpus> <output_model_file>
     # python p1_bpe.py eval <input_model_file> <input_text>
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # Subparser train
+    parser_train = subparsers.add_parser("train", help="Entrenar modelo")
+    parser_train.add_argument(
+        "input_train_corpus", help="Archivo de texto de entrenamiento"
+    )
+    parser_train.add_argument(
+        "output_model_file", help="Archivo donde guardar el modelo entrenado"
+    )
+
+    # Subparser eval
+    parser_eval = subparsers.add_parser("eval", help="Evaluar modelo")
+    parser_eval.add_argument("input_model_file", help="Archivo del modelo entrenado")
+    parser_eval.add_argument("input_text", help="Texto a codificar y decodificar")
+
+    args = parser.parse_args()
+
+    if args.command == "train":
+        input_train_corpus = args.input_train_corpus
+        output_model_file = args.output_model_file
+        bpe = ByteLevelBPE()
+        with open(input_train_corpus, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        bpe.train(lines, vocab_size=1000)
+        with open(output_model_file, "wb") as f:
+            pickle.dump(bpe, f)
+    elif args.command == "eval":
+        input_model_file = args.input_model_file
+        input_text = args.input_text
+        with open(input_model_file, "rb") as f:
+            bpe = pickle.load(f)
+
     exit(1)
