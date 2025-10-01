@@ -132,7 +132,6 @@ class ByteLevelBPE:
 
 
 if __name__ == "__main__":
-    # TODO
     # Uso:
     # python p1_bpe.py train <input_train_corpus> <output_model_file>
     # python p1_bpe.py eval <input_model_file> <input_text>
@@ -170,4 +169,4 @@ if __name__ == "__main__":
         with open(input_model_file, "rb") as f:
             bpe = pickle.load(f)
 
-    exit(1)
+    exit(0)
