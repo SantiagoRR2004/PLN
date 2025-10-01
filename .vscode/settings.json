@@ -5,5 +5,8 @@
       // In this case, all files will trigger the task
     ]
   },
-  "python.terminal.activateEnvironment": true
+  "python.terminal.activateEnvironment": true,
+  "python.testing.unittestArgs": ["-v", "-s", ".", "-p", "*Test.py"],
+  "python.testing.pytestEnabled": false,
+  "python.testing.unittestEnabled": true
 }

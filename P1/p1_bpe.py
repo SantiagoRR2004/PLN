@@ -8,6 +8,7 @@ import pickle
 class ByteLevelBPE:
     """
     Implementación básica de BPE a nivel de bytes.
+    # https://en.wikipedia.org/wiki/Byte-pair_encoding
     - Los tokens iniciales son bytes individuales (0..255).
     - Durante el entrenamiento se obtienen los pares de tokens adyacentes más frecuentes y se fusionan, todo ello de forma iterativa.
     - La codificación (`encode`) aplica las fusiones aprendidas en orden.
