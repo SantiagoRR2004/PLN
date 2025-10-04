@@ -1,6 +1,7 @@
 import math
 from collections import Counter
 
+
 class UnigramLMTokenizer:
     def __init__(self):
         self.token_probs = {}
@@ -74,7 +75,9 @@ class UnigramLMTokenizer:
                         total += contrib
 
             # Update probabilities
-            self.token_probs = {t: counts[t] / total if total > 0 else 1e-8 for t in vocab}
+            self.token_probs = {
+                t: counts[t] / total if total > 0 else 1e-8 for t in vocab
+            }
 
             # Compute the expected loss contribution per token, balancing frequency with information content
             contrib = {}

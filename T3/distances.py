@@ -1,5 +1,6 @@
 from collections import Counter
 
+
 def hamming_distance(s1: str, s2: str) -> int:
     if len(s1) != len(s2):
         raise ValueError("Strings must be of equal length")
@@ -36,7 +37,7 @@ def levenshtein_distance(s1: str, s2: str) -> int:
             dp[i][j] = min(
                 dp[i - 1][j] + 1,  # Deletion
                 dp[i][j - 1] + 1,  # Insertion
-                dp[i - 1][j - 1] + subst_cost  # Substitution
+                dp[i - 1][j - 1] + subst_cost,  # Substitution
             )
         # The previous adjacent cells contain the number of operations to make the strings equal
         # For the new cell, you need at most 1 more operation on top of the previous minimal number of operations
@@ -51,7 +52,7 @@ def levenshtein_example_usage():
 
 def bigrams(s: str):
     """Generate character bigrams from a string."""
-    return [s[i:i+2] for i in range(len(s) - 1)]
+    return [s[i : i + 2] for i in range(len(s) - 1)]
 
 
 def bigram_similarity(s1: str, s2: str) -> float:
