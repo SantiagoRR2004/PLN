@@ -1,4 +1,4 @@
-from P1.p1_bpe import ByteLevelBPE
+from p1_bpe import ByteLevelBPE
 import unittest
 
 
@@ -37,3 +37,43 @@ class TestByteLevelBPE(unittest.TestCase):
         line = (tuple([0]), tuple([0]), tuple([0]))
         merged = ByteLevelBPE._merge_in_line(line, (tuple([0]), tuple([0])))
         self.assertEqual(merged, [tuple([0, 0]), tuple([0])])
+
+    def test_eval_model(self):
+        import os
+        import pickle
+
+        directory = os.path.dirname(os.path.abspath(__file__))
+
+        parent_directory = os.path.dirname(directory)
+
+        model_path = os.path.join(parent_directory, "bpe_model.pkl")
+        if not os.path.exists(model_path):
+            self.skipTest(f"Model file {model_path} not found.")
+
+        with open(model_path, "rb") as f:
+            bpe = pickle.load(f)
+
+        input_text = "the and ing tion with that this from they have been"
+        tokens = bpe.tokenize(input_text)
+        readable_tokens = [bytes(token).decode("utf-8") for token in tokens]
+        self.assertEqual(
+            readable_tokens,
+            [
+                "the ",
+                "and ",
+                "ing ",
+                "tion ",
+                "with ",
+                "that ",
+                "this ",
+                "from ",
+                "they ",
+                "have ",
+                "be",
+                "en",
+            ],
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

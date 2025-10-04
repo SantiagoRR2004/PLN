@@ -112,7 +112,7 @@ class ByteLevelBPE:
 
         # Now we apply merges in order
         for merge in self.merges:
-            tokens = [self._merge_in_line(line, merge) for line in tokens]
+            tokens = self._merge_in_line(tokens, merge)
 
         # Convert tokens to IDs
         return [self.vocab[token] for token in tokens]
@@ -124,12 +124,12 @@ class ByteLevelBPE:
         intTokens = [self.id2bytes[i] for i in ids]
         return "".join([bytes(b).decode("utf-8") for b in intTokens])
 
-    def tokenize(self, text: str) -> List[str]:
+    def tokenize(self, text: str) -> List[Tuple[int, ...]]:
         """
         Tokeniza un texto.
         """
         tokensIDs = self.encode(text)
-        return [self.decode([i]) for i in tokensIDs]
+        return [self.id2bytes[i] for i in tokensIDs]
 
 
 if __name__ == "__main__":
@@ -169,5 +169,24 @@ if __name__ == "__main__":
         input_text = args.input_text
         with open(input_model_file, "rb") as f:
             bpe = pickle.load(f)
+
+        # Encode the text
+        token_ids = bpe.encode(input_text)
+        print(f"Original text: {input_text}")
+        print()
+        print(f"Token IDs: {token_ids}")
+        print()
+
+        # Show tokenization
+        tokens = bpe.tokenize(input_text)
+        print(f"Tokens: {tokens}")
+        print()
+
+        readable_tokens = [bytes(token).decode("utf-8") for token in tokens]
+        print(f"Tokens (readable): {readable_tokens}")
+        print()
+        # Decode back to verify
+        decoded_text = bpe.decode(token_ids)
+        print(f"Decoded text: {decoded_text}")
 
     exit(0)
