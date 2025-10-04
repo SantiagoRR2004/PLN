@@ -19,7 +19,11 @@
       "request": "launch",
       "program": "${workspaceFolder}/P1/p1_bpe.py",
       "console": "integratedTerminal",
-      "args": ["eval", "./bpe_model.pkl", "There's a surprising twist to Regina Willoughby's last season with Columbia City Ballet The Royals sent 11 men to the plate in a seven-run second to build a 9-0 lead"]
+      "args": [
+        "eval",
+        "./bpe_model.pkl",
+        "There's a surprising twist to Regina Willoughby's last season with Columbia City Ballet The Royals sent 11 men to the plate in a seven-run second to build a 9-0 lead"
+      ]
     }
   ]
 }
