@@ -1,8 +1,8 @@
 from typing import Dict, Iterable, List, Optional, Tuple
 from collections import Counter
-
 import argparse
 import pickle
+import tqdm
 
 
 class ByteLevelBPE:
@@ -82,9 +82,11 @@ class ByteLevelBPE:
         # Convert lines to tokens
         lines_tokens = [self._to_byte_tokens(line) for line in lines]
 
-        while len(self.vocab) < vocab_size and (
-            max_merges is None or len(self.merges) < max_merges
-        ):
+        maxIterations = min(
+            vocab_size - len(self.vocab), max_merges if max_merges else vocab_size
+        )
+
+        for _ in tqdm.tqdm(range(maxIterations), desc="Training BPE"):
             # Count pairs
             pairs = self._count_pairs(lines_tokens)
 
