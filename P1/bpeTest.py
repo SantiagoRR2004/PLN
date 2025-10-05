@@ -1,5 +1,7 @@
-from p1_bpe import ByteLevelBPE
+from P1 import ByteLevelBPE
 import unittest
+import pickle
+import os
 
 
 class TestByteLevelBPE(unittest.TestCase):
@@ -39,19 +41,24 @@ class TestByteLevelBPE(unittest.TestCase):
         self.assertEqual(merged, [tuple([0, 0]), tuple([0])])
 
     def test_eval_model(self):
-        import os
-        import pickle
+        # Custom unpickler that can handle module path issues
+        class CustomUnpickler(pickle.Unpickler):
+            def find_class(self, module, name):
+                # If the class was pickled from __main__, redirect to our import
+                if module == "__main__" and name == "ByteLevelBPE":
+                    return ByteLevelBPE
+                return super().find_class(module, name)
 
-        directory = os.path.dirname(os.path.abspath(__file__))
+        currentDirectory = os.path.dirname(os.path.abspath(__file__))
 
-        parent_directory = os.path.dirname(directory)
+        parentDirectory = os.path.dirname(currentDirectory)
 
-        model_path = os.path.join(parent_directory, "bpe_model.pkl")
+        model_path = os.path.join(parentDirectory, "bpe_model.pkl")
         if not os.path.exists(model_path):
             self.skipTest(f"Model file {model_path} not found.")
 
         with open(model_path, "rb") as f:
-            bpe = pickle.load(f)
+            bpe = CustomUnpickler(f).load()
 
         input_text = "the and ing tion with that this from they have been"
         tokens = bpe.tokenize(input_text)
