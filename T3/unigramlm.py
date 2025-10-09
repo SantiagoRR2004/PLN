@@ -117,8 +117,6 @@ class UnigramLMTokenizer:
             )  # Use of math.inf in case there is a token no evaluated. For now, skip it.
             # Explanation: This line sorts the vocabulary based on the contribution values computed earlier.
             # Tokens with lower contribution values (higher information content) will come first.
-            # Why math.inf? To ensure that tokens not present in the contrib dictionary (which means they have zero counts)
-            # are ranked lowest and thus are more likely to be pruned.
 
             # Remove 20% least useful tokens
             remove_count = max(1, len(ranked) // 5)
