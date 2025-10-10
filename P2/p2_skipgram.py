@@ -1,4 +1,6 @@
+from P1 import ByteLevelBPE
 import numpy as np
+import pickle
 
 
 def sigmoid(x):
@@ -25,14 +27,14 @@ class Trainer:
 
     def __init__(
         self,
-        corpus_fpath,
-        rng,
-        embedding_dim,
-        window_size,
-        epochs,
-        lr,
-        lr_min_factor,
-        neg_samples,
+        corpus_fpath: str,
+        rng: np.random.Generator,
+        embedding_dim: int,
+        window_size: int,
+        epochs: int,
+        lr: float,
+        lr_min_factor: float,
+        neg_samples: int,
     ):
         self.corpus_fpath = corpus_fpath
         self.rng = rng
@@ -43,8 +45,15 @@ class Trainer:
         self.lr_min_factor = lr_min_factor
         self.neg_samples = neg_samples
 
-        # TODO 1.1: Carga el corpus y tokenízalo usando el tokenizador BPE de la práctica anterior.
+        # 1.1: Carga el corpus y tokenízalo usando el tokenizador BPE de la práctica anterior.
         # El corpus debería quedar codificado como una secuencia de ids de tokens.
+        with open("bpe_model.pkl", "rb") as f:
+            bpe: ByteLevelBPE = pickle.load(f)
+
+        with open(corpus_fpath, "r", encoding="utf-8") as f:
+            corpus = f.read()
+
+        corpus = [bpe.encode(c) for c in corpus.split("\n\n")]
 
         # Aplica ajustes para evitar la sobreponderancia de tokens frecuentes
         self._neg_sampling_fix()
@@ -81,7 +90,7 @@ def dump_embeddings(
 
 def main():
     trainer = Trainer(
-        corpus_fpath="./tiny_cc_news.txt",
+        corpus_fpath="P0/tiny_cc_news.txt",
         rng=np.random.default_rng(42),
         embedding_dim=100,
         window_size=5,
