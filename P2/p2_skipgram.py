@@ -9,7 +9,7 @@ def sigmoid(x):
     ez = np.exp(x[neg])
     out[neg] = ez / (1.0 + ez)
     return out
-    
+
 
 # TODO 1: Implementa un método de entrenamiento simple, esto es, con learning rate (LR) constante y ventana estática.
 class Trainer:
@@ -23,14 +23,24 @@ class Trainer:
         # donde `t = 1e-5` y `f` es la frecuencia relativa del token.
         pass
 
-    def __init__(self, corpus_fpath, rng, embedding_dim, window_size, epochs, lr, lr_min_factor, neg_samples):
+    def __init__(
+        self,
+        corpus_fpath,
+        rng,
+        embedding_dim,
+        window_size,
+        epochs,
+        lr,
+        lr_min_factor,
+        neg_samples,
+    ):
         self.corpus_fpath = corpus_fpath
         self.rng = rng
         self.embedding_dim = embedding_dim
         self.window_size = window_size
         self.epochs = epochs
         self.lr = lr
-        self.lr_min_factor = lr_min_factor 
+        self.lr_min_factor = lr_min_factor
         self.neg_samples = neg_samples
 
         # TODO 1.1: Carga el corpus y tokenízalo usando el tokenizador BPE de la práctica anterior.
@@ -62,16 +72,16 @@ class Trainer:
 
 
 def dump_embeddings(
-        # ...
-        E
-        ):
+    # ...
+    E,
+):
     # TODO 1.6: Escribe las embeddings en un fichero de texto donde, en la primera fila, aparezca el tamaño del vocabulario y el número de dimensiones de las embeddings y, en el resto de filas, cada token seguido de su correspondiente embedding, separando cada elemento con espacios simples. Ojo, los tokens pueden contener espacios.
     pass
 
 
 def main():
     trainer = Trainer(
-        corpus_fpath='./tiny_cc_news.txt',
+        corpus_fpath="./tiny_cc_news.txt",
         rng=np.random.default_rng(42),
         embedding_dim=100,
         window_size=5,
@@ -86,8 +96,8 @@ def main():
     dump_embeddings(
         # ...
         E
-        )
-    
+    )
+
 
 if __name__ == "__main__":
     main()
