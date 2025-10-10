@@ -48,20 +48,23 @@ class Trainer:
         # 1.1: Carga el corpus y tokenízalo usando el tokenizador BPE de la práctica anterior.
         # El corpus debería quedar codificado como una secuencia de ids de tokens.
         with open("bpe_model.pkl", "rb") as f:
-            bpe: ByteLevelBPE = pickle.load(f)
+            self.bpe: ByteLevelBPE = pickle.load(f)
 
         with open(corpus_fpath, "r", encoding="utf-8") as f:
             corpus = f.read()
 
-        corpus = [bpe.encode(c) for c in corpus.split("\n\n")]
+        self.corpus = [self.bpe.encode(c) for c in corpus.split("\n\n")]
 
         # Aplica ajustes para evitar la sobreponderancia de tokens frecuentes
         self._neg_sampling_fix()
         self._subsample_data()
 
-    def sample_neg(self, forbidden):
-        # TODO 1.2: Obtén una muestra negativa de tokens, evitando seleccionar aquellos en `forbidden`, que serán los que estén dentro de la ventana actual.
-        pass
+    def sample_neg(self, forbidden) -> int:
+        # 1.2: Obtén una muestra negativa de tokens, evitando seleccionar aquellos en `forbidden`, que serán los que estén dentro de la ventana actual.
+        while True:
+            token = self.rng.choice(self.bpe.vocab.values())
+            if token not in forbidden:
+                return token
 
     def train(self):
         # TODO 1.3: Inicializa dos matrices de `self.vocab_size` x `self.embedding_dim` para tokens centrales y contexto.
