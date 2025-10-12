@@ -67,6 +67,7 @@ class TestByteLevelBPE(unittest.TestCase):
         input_text = "the and ing tion with that this from they have been"
         tokens = bpe.tokenize(input_text)
         readable_tokens = [bytes(token).decode("utf-8") for token in tokens]
+        print(readable_tokens)
         self.assertEqual(
             readable_tokens,
             [

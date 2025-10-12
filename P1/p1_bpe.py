@@ -73,14 +73,36 @@ class ByteLevelBPE:
         # Iterate finding pairs
         while i < len(line):
             if i < len(line) - 1 and (line[i], line[i + 1]) == pair:
-                newLine.append(pair[0] + pair[1])
+                merged_token = pair[0] + pair[1]
+                newLine.append(merged_token)
+                # if we merged (A, B) -> (AB), we need to reduce the count of (A, B)
+                # because we removed one occurrence of it
+                if pair in self.pairs:
+                    self.pairs[pair] -= 1
+                    if self.pairs[pair] <= 0:
+                        del self.pairs[pair]
+                # Updating pairs Counter around the merged pair
                 if i > 0:
-                    self.pairs[(line[i - 1], pair[0] + pair[1])] = (
-                        self.pairs.get((line[i - 1], pair[0] + pair[1]), 0) + 1
+                    # Reduce count of the pair to the left (X, A)
+                    old_left_pair = (line[i - 1], pair[0])
+                    if old_left_pair in self.pairs:
+                        self.pairs[old_left_pair] -= 1
+                        if self.pairs[old_left_pair] <= 0:
+                            del self.pairs[old_left_pair]
+                    # Add new pair (X, AB)
+                    self.pairs[(line[i - 1], merged_token)] = (
+                        self.pairs.get((line[i - 1], merged_token), 0) + 1
                     )
                 if i < len(line) - 2:
-                    self.pairs[(pair[0] + pair[1], line[i + 2])] = (
-                        self.pairs.get((pair[0] + pair[1], line[i + 2]), 0) + 1
+                    # Reduce count of the pair to the right (B, Y)
+                    old_right_pair = (pair[1], line[i + 2])
+                    if old_right_pair in self.pairs:
+                        self.pairs[old_right_pair] -= 1
+                        if self.pairs[old_right_pair] <= 0:
+                            del self.pairs[old_right_pair]
+                    # Pair to the right of the merged pair
+                    self.pairs[(merged_token, line[i + 2])] = (
+                        self.pairs.get((merged_token, line[i + 2]), 0) + 1
                     )
                 i += 2
             else:
