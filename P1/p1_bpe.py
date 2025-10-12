@@ -27,27 +27,38 @@ class ByteLevelBPE:
         b = s.encode("utf-8")
         return [(x,) for x in b]
 
-    @staticmethod
     def _count_pairs(
+        self,
         lines_tokens: List[List[Tuple[int, ...]]],
     ) -> Dict[Tuple[Tuple[int, ...], Tuple[int, ...]], int]:
         """
         Obtiene las frecuencias de pares de tokens adyacentes en todas las líneas
-        """
-        return dict(
-            Counter(
-                (line[i], line[i + 1])
-                for line in lines_tokens
-                for i in range(len(line) - 1)
-            )
-        )
 
-    @staticmethod
+        Calcular los pares en cada iteración tarda alrededor de 1 minuto y 10
+        segundos para obtener un vocabulario de 1000 tokens.
+
+        Con el nuevo método de ir actualizando en cada fusión, tarda
+        alrededor de 30 segundos para 1000 tokens.
+        """
+        if hasattr(self, "pairs"):
+            return self.pairs
+        else:
+            self.pairs = dict(
+                Counter(
+                    (line[i], line[i + 1])
+                    for line in lines_tokens
+                    for i in range(len(line) - 1)
+                )
+            )
+        return self.pairs
+
     def _merge_in_line(
-        line: List[Tuple[int, ...]], pair: Tuple[Tuple[int, ...], Tuple[int, ...]]
+        self, line: List[Tuple[int, ...]], pair: Tuple[Tuple[int, ...], Tuple[int, ...]]
     ) -> List[Tuple[int, ...]]:
         """
         Fusiona todas ocurrencias del par `pair` en una línea (sin solapamiento)
+
+        Vamos actualizando también el diccionario de pares.
 
         Args:
             - line: list of tokens
@@ -63,6 +74,14 @@ class ByteLevelBPE:
         while i < len(line):
             if i < len(line) - 1 and (line[i], line[i + 1]) == pair:
                 newLine.append(pair[0] + pair[1])
+                if i > 0:
+                    self.pairs[(line[i - 1], pair[0] + pair[1])] = (
+                        self.pairs.get((line[i - 1], pair[0] + pair[1]), 0) + 1
+                    )
+                if i < len(line) - 2:
+                    self.pairs[(pair[0] + pair[1], line[i + 2])] = (
+                        self.pairs.get((pair[0] + pair[1], line[i + 2]), 0) + 1
+                    )
                 i += 2
             else:
                 newLine.append(line[i])
@@ -95,6 +114,9 @@ class ByteLevelBPE:
 
             # Add to merges
             self.merges.append(mostCommon)
+
+            # Delete from the pairs dict
+            del self.pairs[mostCommon]
 
             # Create new token
             newToken = mostCommon[0] + mostCommon[1]
