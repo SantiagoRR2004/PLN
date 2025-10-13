@@ -52,7 +52,35 @@ class ByteLevelBPE:
             )
         return self.pairs
 
+    @staticmethod
     def _merge_in_line(
+        line: List[Tuple[int, ...]], pair: Tuple[Tuple[int, ...], Tuple[int, ...]]
+    ) -> List[Tuple[int, ...]]:
+        """
+        Fusiona todas ocurrencias del par `pair` en una línea (sin solapamiento)
+
+        Args:
+            - line: list of tokens
+            - pair: pair of tokens to merge
+
+        Returns:
+            - new line with the pair merged
+        """
+        newLine = []
+
+        i = 0
+        # Iterate finding pairs
+        while i < len(line):
+            if i < len(line) - 1 and (line[i], line[i + 1]) == pair:
+                newLine.append(pair[0] + pair[1])
+                i += 2
+            else:
+                newLine.append(line[i])
+                i += 1
+
+        return newLine
+
+    def _merge_in_lineTrain(
         self, line: List[Tuple[int, ...]], pair: Tuple[Tuple[int, ...], Tuple[int, ...]]
     ) -> List[Tuple[int, ...]]:
         """
@@ -69,41 +97,58 @@ class ByteLevelBPE:
         """
         newLine = []
 
+        mergedToken = pair[0] + pair[1]
+
         i = 0
         # Iterate finding pairs
         while i < len(line):
             if i < len(line) - 1 and (line[i], line[i + 1]) == pair:
-                merged_token = pair[0] + pair[1]
-                newLine.append(merged_token)
-                # if we merged (A, B) -> (AB), we need to reduce the count of (A, B)
-                # because we removed one occurrence of it
-                if pair in self.pairs:
-                    self.pairs[pair] -= 1
-                    if self.pairs[pair] <= 0:
-                        del self.pairs[pair]
+
+                """
+                When we have X A B Y with A B the pair to merge
+                we need to:
+                    - Remove one (A, B)
+                    - Add one more (X, AB)
+                    - Remove one (X, A)
+                    - Add one more (AB, Y)
+                    - Remove one (B, Y)
+
+
+                Edge case: ABAB -> A B A B
+                Can't add (AB, A) need to add (AB, AB)
+                and we can't remove (B, A) twice
+                """
+
+                newLine.append(mergedToken)
+                self.pairs[pair] -= 1
+
                 # Updating pairs Counter around the merged pair
                 if i > 0:
                     # Reduce count of the pair to the left (X, A)
-                    old_left_pair = (line[i - 1], pair[0])
-                    if old_left_pair in self.pairs:
-                        self.pairs[old_left_pair] -= 1
-                        if self.pairs[old_left_pair] <= 0:
-                            del self.pairs[old_left_pair]
+                    if newLine[-2] != mergedToken:
+                        # It wasn't already eliminated in the previous forward
+                        self.pairs[(line[i - 1], pair[0])] -= 1
+
                     # Add new pair (X, AB)
-                    self.pairs[(line[i - 1], merged_token)] = (
-                        self.pairs.get((line[i - 1], merged_token), 0) + 1
+                    self.pairs[(newLine[-2], mergedToken)] = (
+                        self.pairs.get((newLine[-2], mergedToken), 0) + 1
                     )
                 if i < len(line) - 2:
                     # Reduce count of the pair to the right (B, Y)
-                    old_right_pair = (pair[1], line[i + 2])
-                    if old_right_pair in self.pairs:
-                        self.pairs[old_right_pair] -= 1
-                        if self.pairs[old_right_pair] <= 0:
-                            del self.pairs[old_right_pair]
-                    # Pair to the right of the merged pair
-                    self.pairs[(merged_token, line[i + 2])] = (
-                        self.pairs.get((merged_token, line[i + 2]), 0) + 1
-                    )
+                    self.pairs[(pair[1], line[i + 2])] -= 1
+
+                    if i < len(line) - 3 and (line[i + 2], line[i + 3]) == pair:
+                        # Edge case ABAB, add (AB, AB)
+                        """
+                        Will be handled in the next iteration
+                        """
+                        pass
+                    else:
+                        # Add new pair (AB, Y)
+                        self.pairs[(mergedToken, line[i + 2])] = (
+                            self.pairs.get((mergedToken, line[i + 2]), 0) + 1
+                        )
+
                 i += 2
             else:
                 newLine.append(line[i])
@@ -137,9 +182,6 @@ class ByteLevelBPE:
             # Add to merges
             self.merges.append(mostCommon)
 
-            # Delete from the pairs dict
-            del self.pairs[mostCommon]
-
             # Create new token
             newToken = mostCommon[0] + mostCommon[1]
             self.vocab[newToken] = len(self.vocab)
@@ -147,8 +189,14 @@ class ByteLevelBPE:
 
             # Update the line_tokens
             lines_tokens = [
-                self._merge_in_line(line, mostCommon) for line in lines_tokens
+                self._merge_in_lineTrain(line, mostCommon) for line in lines_tokens
             ]
+
+            # Check that there are no negatives
+            # assert all(v >= 0 for v in self.pairs.values())
+
+            # Delete pairs with frequency 0 ¿Efficient?
+            self.pairs = {k: v for k, v in self.pairs.items() if v > 0}
 
     def encode(self, text: str) -> List[int]:
         """

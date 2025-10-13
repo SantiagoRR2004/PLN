@@ -31,18 +31,59 @@ class TestByteLevelBPE(unittest.TestCase):
 
     def test_merge_in_line1(self):
         line = (tuple([0]), tuple([1]), tuple([0]), tuple([1]))
-        bpe = ByteLevelBPE()
-        bpe.pairs = {}
-        merged = bpe._merge_in_line(line, (tuple([0]), tuple([1])))
+        merged = ByteLevelBPE._merge_in_line(line, (tuple([0]), tuple([1])))
         self.assertEqual(merged, [tuple([0, 1]), tuple([0, 1])])
 
     def test_merge_in_line2(self):
         # Check that it is greedy
         line = (tuple([0]), tuple([0]), tuple([0]))
-        bpe = ByteLevelBPE()
-        bpe.pairs = {}
-        merged = bpe._merge_in_line(line, (tuple([0]), tuple([0])))
+        merged = ByteLevelBPE._merge_in_line(line, (tuple([0]), tuple([0])))
         self.assertEqual(merged, [tuple([0, 0]), tuple([0])])
+
+    def test_merge_in_lineTrain1(self):
+        line = (tuple([0]), tuple([1]), tuple([0]), tuple([1]))
+        bpe = ByteLevelBPE()
+        bpe.pairs = {(tuple([0]), tuple([1])): 2, (tuple([1]), tuple([0])): 1}
+        merged = bpe._merge_in_lineTrain(line, (tuple([0]), tuple([1])))
+        self.assertEqual(merged, [tuple([0, 1]), tuple([0, 1])])
+
+        self.assertEqual(
+            bpe.pairs,
+            {
+                (tuple([0]), tuple([1])): 0,
+                (tuple([1]), tuple([0])): 0,
+                (tuple([0, 1]), tuple([0, 1])): 1,
+            },
+        )
+
+    def test_merge_in_lineTrain2(self):
+        # Check that it is greedy
+        line = (tuple([0]), tuple([0]), tuple([0]))
+        bpe = ByteLevelBPE()
+        bpe.pairs = {(tuple([0]), tuple([0])): 2}
+        merged = bpe._merge_in_lineTrain(line, (tuple([0]), tuple([0])))
+        self.assertEqual(merged, [tuple([0, 0]), tuple([0])])
+
+        self.assertEqual(
+            bpe.pairs, {(tuple([0]), tuple([0])): 0, (tuple([0, 0]), tuple([0])): 1}
+        )
+
+    def test_merge_in_lineTrain3(self):
+        # Check that it is greedy
+        line = (tuple([0]), tuple([1]), tuple([0]), tuple([1]), tuple([0]), tuple([1]))
+        bpe = ByteLevelBPE()
+        bpe.pairs = {(tuple([0]), tuple([1])): 3, (tuple([1]), tuple([0])): 2}
+        merged = bpe._merge_in_lineTrain(line, (tuple([0]), tuple([1])))
+        self.assertEqual(merged, [tuple([0, 1]), tuple([0, 1]), tuple([0, 1])])
+
+        self.assertEqual(
+            bpe.pairs,
+            {
+                (tuple([0]), tuple([1])): 0,
+                (tuple([1]), tuple([0])): 0,
+                (tuple([0, 1]), tuple([0, 1])): 2,
+            },
+        )
 
     def test_eval_model(self):
         # Custom unpickler that can handle module path issues
