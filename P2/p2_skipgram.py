@@ -1,6 +1,7 @@
 from P1 import ByteLevelBPE
 import numpy as np
 import pickle
+import tqdm
 
 
 def sigmoid(x):
@@ -81,12 +82,67 @@ class Trainer:
             size=(len(self.bpe.vocab), self.embedding_dim),
         ).astype(np.float32)
 
-        # TODO 1.4: Para cada `epoch` y para cada token en el corpus:
-        # Para cada token en el contexto del token actual, es decir, para cada token dentro de los `self.window_size` tokens a la derecha e izquieda del actual, sin contar este:
-        # Calcular el producto escalar entre las embeddings del token central y token de contexto.
-        # Pasar el resultado por la función `sigmoid`, obteniendo `pos_score`.
-        # Muestra positiva: actualizar las embeddings del token central y token contexto usando el LR, `(1 - pos_score)` y la embedding (¡original!) del otro token.
-        # Muestras negativas: obtener muestras negativas para el token central y, para cada una, realizar un proceso similar al de la muestra positiva, con la salvedad de que ahora `pos_score` es `neg_score` y se usa `-neg_score` para actualizar las embeddings.
+        # 1.4: Para cada `epoch` y para cada token en el corpus
+        for epoch in tqdm.tqdm(range(self.epochs), desc="Training"):
+            for sentence in self.corpus:
+                for i, centralToken in enumerate(sentence):
+                    """
+                    Para cada token en el contexto del token actual,
+                    es decir, para cada token dentro de los `self.window_size`
+                    tokens a la derecha e izquieda del actual, sin contar este
+                    """
+                    window = (
+                        sentence[max(i - self.window_size, 0) : i]
+                        + sentence[i + 1 : min(i + self.window_size + 1, len(sentence))]
+                    )
+
+                    # Calcular el producto escalar entre las embeddings del token central y token de contexto.
+                    scalar = np.dot(
+                        centralEmbeddings[centralToken],
+                        contextEmbeddings[window].T,
+                    )
+
+                    # Pasar el resultado por la función `sigmoid`, obteniendo `pos_score`.
+                    pos_score = sigmoid(scalar)
+
+                    """
+                    Muestra positiva: actualizar las embeddings del token central y
+                    token contexto usando el LR, `(1 - pos_score)` y la embedding
+                    (¡original!) del otro token.
+                    """
+                    centralEmbeddings[centralToken] += self.lr * np.sum(
+                        (1 - pos_score)[:, np.newaxis] * contextEmbeddings[window],
+                        axis=0,
+                    )
+                    contextEmbeddings[window] += (
+                        self.lr
+                        * (1 - pos_score)[:, np.newaxis]
+                        * centralEmbeddings[centralToken]
+                    )
+
+                    # Muestras negativas
+                    # Obtener muestras negativas para el token central
+                    negativeSamples = self.sample_neg(forbidden=window + [centralToken])
+                    # Para cada una, realizar un proceso similar al de la muestra positiva
+                    # Ahora `pos_score` es `neg_score`
+                    neg_score = sigmoid(
+                        np.dot(
+                            centralEmbeddings[centralToken],
+                            contextEmbeddings[negativeSamples].T,
+                        )
+                    )
+
+                    # Se usa `-neg_score` para actualizar las embeddings.
+                    centralEmbeddings[centralToken] += self.lr * np.sum(
+                        (-neg_score)[:, np.newaxis]
+                        * contextEmbeddings[negativeSamples],
+                        axis=0,
+                    )
+                    contextEmbeddings[negativeSamples] += (
+                        self.lr
+                        * -neg_score[:, np.newaxis]
+                        * centralEmbeddings[centralToken]
+                    )
 
         # TODO 4: Usa una ventana de contexto dinámica, con tamaños que varíen aleatoriamente dentro del rango de la ventana estática original.
         # TODO 5: Haz que el LR disminuya progresivamente durante el entrenamiento (linear decay).
