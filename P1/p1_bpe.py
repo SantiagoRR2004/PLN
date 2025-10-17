@@ -226,12 +226,55 @@ class ByteLevelBPE:
         return [self.id2bytes[i] for i in tokensIDs]
 
 
+def train(trainCorpus: str, outputModelFile: str) -> None:
+    """
+    Trains a BPE model and saves it to a file.
+
+    Args:
+        - trainCorpus: path to the training corpus file
+        - outputModelFile: path to save the trained model
+
+    Returns:
+        - None
+    """
+    bpe = ByteLevelBPE()
+    with open(trainCorpus, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+    bpe.train(lines, vocab_size=1000)
+    with open(outputModelFile, "wb") as f:
+        pickle.dump(bpe, f)
+
+
+def eval(inputModelFile: str, inputText: str) -> None:
+    with open(inputModelFile, "rb") as f:
+        bpe = pickle.load(f)
+
+    # Encode the text
+    token_ids = bpe.encode(inputText)
+    print(f"Original text: {inputText}")
+    print()
+    print(f"Token IDs: {token_ids}")
+    print()
+
+    # Show tokenization
+    tokens = bpe.tokenize(inputText)
+    print(f"Tokens: {tokens}")
+    print()
+
+    readable_tokens = [bytes(token).decode("utf-8") for token in tokens]
+    print(f"Tokens (readable): {readable_tokens}")
+    print()
+    # Decode back to verify
+    decoded_text = bpe.decode(token_ids)
+    print(f"Decoded text: {decoded_text}")
+
+
 if __name__ == "__main__":
     # Uso:
     # python p1_bpe.py train <input_train_corpus> <output_model_file>
     # python p1_bpe.py eval <input_model_file> <input_text>
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command", required=False)
 
     # Subparser train
     parser_train = subparsers.add_parser("train", help="Entrenar modelo")
@@ -249,38 +292,23 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.command == "train":
-        input_train_corpus = args.input_train_corpus
-        output_model_file = args.output_model_file
-        bpe = ByteLevelBPE()
-        with open(input_train_corpus, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-        bpe.train(lines, vocab_size=1000)
-        with open(output_model_file, "wb") as f:
-            pickle.dump(bpe, f)
+    if args.command is None:
+        # Default case use default variables
+        import os
+
+        currentDirectory = os.path.dirname(os.path.abspath(__file__))
+
+        dataFile = os.path.join(
+            os.path.dirname(currentDirectory), "P0", "tiny_cc_news.txt"
+        )
+        modelFile = os.path.join(os.path.dirname(currentDirectory), "bpe_model.pkl")
+        testingText = "There's a surprising twist to Regina Willoughby's last season with Columbia City Ballet The Royals sent 11 men to the plate in a seven-run second to build a 9-0 lead"
+
+        train(dataFile, modelFile)
+        eval(modelFile, testingText)
+
+    elif args.command == "train":
+        train(args.input_train_corpus, args.output_model_file)
+
     elif args.command == "eval":
-        input_model_file = args.input_model_file
-        input_text = args.input_text
-        with open(input_model_file, "rb") as f:
-            bpe = pickle.load(f)
-
-        # Encode the text
-        token_ids = bpe.encode(input_text)
-        print(f"Original text: {input_text}")
-        print()
-        print(f"Token IDs: {token_ids}")
-        print()
-
-        # Show tokenization
-        tokens = bpe.tokenize(input_text)
-        print(f"Tokens: {tokens}")
-        print()
-
-        readable_tokens = [bytes(token).decode("utf-8") for token in tokens]
-        print(f"Tokens (readable): {readable_tokens}")
-        print()
-        # Decode back to verify
-        decoded_text = bpe.decode(token_ids)
-        print(f"Decoded text: {decoded_text}")
-
-    exit(0)
+        eval(args.input_model_file, args.input_text)
