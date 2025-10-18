@@ -198,6 +198,24 @@ class ByteLevelBPE:
             # Delete pairs with frequency 0 ¿Efficient?
             self.pairs = {k: v for k, v in self.pairs.items() if v > 0}
 
+        """
+        Create the improved encoder
+
+        It will be a nested dictionary
+        that will have an "r" for result
+        """
+        encoder = {}
+
+        for token, tokenID in self.vocab.items():
+            d = encoder
+            for i, b in enumerate(token):
+                if i == len(token) - 1:
+                    d.setdefault(b, {})["r"] = tokenID
+                else:
+                    d = d.setdefault(b, {})
+
+        self.encoderTree = encoder
+
     def encode(self, text: str) -> List[int]:
         """
         Convierte el texto de entrada en una lista de token IDs.
@@ -215,12 +233,28 @@ class ByteLevelBPE:
         """
         tokens = self._to_byte_tokens(text)
 
-        # Now we apply merges in order
-        for merge in self.merges:
-            tokens = self._merge_in_line(tokens, merge)
+        # Now we can use the encoder tree to do the merges more efficiently
+        i = 0
+        ids = []
+        while i < len(tokens):
+            d = self.encoderTree
+            j = i
+            lastMatch = None
+            lastMatchIndex = i
 
-        # Convert tokens to IDs
-        return [self.vocab[token] for token in tokens]
+            # Try to find the longest match
+            while j < len(tokens) and tokens[j][0] in d:
+                d = d[tokens[j][0]]
+                if "r" in d:
+                    lastMatch = d["r"]
+                    lastMatchIndex = j
+                j += 1
+
+            # There is always a guaranteed match
+            ids.append(lastMatch)
+            i = lastMatchIndex + 1
+
+        return ids
 
     def decode(self, ids: List[int]) -> str:
         """
