@@ -82,9 +82,28 @@ class Trainer:
             size=(len(self.bpe.vocab), self.embedding_dim),
         ).astype(np.float32)
 
+        totalStepsCorpus = sum(len(s) for s in self.corpus)
+        totalSteps = self.epochs * totalStepsCorpus
+
+        barTrain = tqdm.tqdm(total=totalSteps, desc="Training", position=0)
+
         # 1.4: Para cada `epoch` y para cada token en el corpus
-        for epoch in tqdm.tqdm(range(self.epochs), desc="Training"):
-            for sentence in self.corpus:
+        for epoch in range(self.epochs):
+            barEpoch = tqdm.tqdm(
+                total=totalStepsCorpus,
+                desc=f"Epoch {epoch+1}",
+                position=1,
+                leave=epoch >= self.epochs - 1,
+            )
+
+            for iS, sentence in enumerate(self.corpus):
+                barSentence = tqdm.tqdm(
+                    total=len(sentence),
+                    desc=f"Sentence {iS+1}",
+                    position=2,
+                    leave=epoch >= self.epochs - 1 and iS >= len(self.corpus) - 1,
+                )
+
                 for i, centralToken in enumerate(sentence):
                     """
                     Para cada token en el contexto del token actual,
@@ -143,6 +162,10 @@ class Trainer:
                         * -neg_score[:, np.newaxis]
                         * centralEmbeddings[centralToken]
                     )
+
+                    barSentence.update(1)
+                    barEpoch.update(1)
+                    barTrain.update(1)
 
         # TODO 4: Usa una ventana de contexto dinámica, con tamaños que varíen aleatoriamente dentro del rango de la ventana estática original.
         # TODO 5: Haz que el LR disminuya progresivamente durante el entrenamiento (linear decay).

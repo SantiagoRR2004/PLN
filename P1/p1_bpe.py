@@ -201,6 +201,17 @@ class ByteLevelBPE:
     def encode(self, text: str) -> List[int]:
         """
         Convierte el texto de entrada en una lista de token IDs.
+
+        TODO: Make this more efficient
+        Maybe use a different data sctructure to merge
+        instead of doing each time a full pass over the tokens
+        for each merge.
+
+        Args:
+            - text: text to encode
+
+        Returns:
+            - list of token IDs
         """
         tokens = self._to_byte_tokens(text)
 
