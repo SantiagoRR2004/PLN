@@ -156,11 +156,18 @@ class Trainer:
                         * centralEmbeddings[centralToken]
                     )
 
+                    """
+                    4: Usa una ventana de contexto dinámica,
+                    con tamaños que varíen aleatoriamente dentro
+                    del rango de la ventana estática original.
+                    """
+                    self.window_size = self.rng.integers(1, self.window_size + 1)
+
                 barEpoch.update(1)
                 barTrain.update(1)
 
-        # TODO 4: Usa una ventana de contexto dinámica, con tamaños que varíen aleatoriamente dentro del rango de la ventana estática original.
-        # TODO 5: Haz que el LR disminuya progresivamente durante el entrenamiento (linear decay).
+            # 5: Haz que el LR disminuya progresivamente durante el entrenamiento (linear decay).
+            self.lr += (self.lr_min_factor - self.lr) / (self.epochs - epoch)
 
         # 1.5: Devuelve las dos matrices de embeddings.
         return centralEmbeddings, contextEmbeddings
