@@ -1,7 +1,10 @@
+from typing import List
 from P1 import ByteLevelBPE
 import numpy as np
 import pickle
 import tqdm
+
+# Una embedding es una codificación que hace la red neuronal para una entrada dada.
 
 
 def sigmoid(x):
@@ -17,7 +20,9 @@ def sigmoid(x):
 # TODO 1: Implementa un método de entrenamiento simple, esto es, con learning rate (LR) constante y ventana estática.
 class Trainer:
     def _neg_sampling_fix(self):
-        # TODO 2: Inicializa `self.neg_prob`, que será usado como distribución de probabilidad a la hora de hacer el muestreo negativo, de modo que contenga las frecuencias relativas de cada token del vocabulario elevadas a 2/3.
+        # TODO 2: Inicializa `self.neg_prob`, que será usado como distribución de probabilidad
+        # a la hora de hacer el muestreo negativo, de modo que contenga las frecuencias
+        # relativas de cada token del vocabulario elevadas a 2/3.
         pass
 
     def _subsample_data(self):
@@ -60,8 +65,9 @@ class Trainer:
         self._neg_sampling_fix()
         self._subsample_data()
 
-    def sample_neg(self, forbidden) -> int:
-        # 1.2: Obtén una muestra negativa de tokens, evitando seleccionar aquellos en `forbidden`, que serán los que estén dentro de la ventana actual.
+    def sample_neg(self, forbidden) -> List[int]:
+        # 1.2: Obtén una muestra negativa de tokens, evitando seleccionar aquellos en
+        # `forbidden`, que serán los que estén dentro de la ventana actual.
         samples = []
         while len(samples) < self.neg_samples:
             token = self.rng.choice(list(self.bpe.vocab.values()))
@@ -70,7 +76,8 @@ class Trainer:
         return samples
 
     def train(self):
-        # 1.3: Inicializa dos matrices de `self.vocab_size` x `self.embedding_dim` para tokens centrales y contexto.
+        # 1.3: Inicializa dos matrices de `self.vocab_size` x `self.embedding_dim` para tokens
+        # centrales y contexto.
         centralEmbeddings = np.random.uniform(
             low=-0.5 / self.embedding_dim,
             high=0.5 / self.embedding_dim,
@@ -177,7 +184,12 @@ def dump_embeddings(
     # ...
     E,
 ):
-    # TODO 1.6: Escribe las embeddings en un fichero de texto donde, en la primera fila, aparezca el tamaño del vocabulario y el número de dimensiones de las embeddings y, en el resto de filas, cada token seguido de su correspondiente embedding, separando cada elemento con espacios simples. Ojo, los tokens pueden contener espacios.
+    # TODO 1.6: Escribe las embeddings en un fichero de texto donde,
+    # en la primera fila, aparezca el tamaño del vocabulario y el
+    # número de dimensiones de las embeddings y, en el resto de filas,
+    # cada token seguido de su correspondiente embedding, separando
+    # cada elemento con espacios simples.
+    # Ojo, los tokens pueden contener espacios.
     pass
 
 
