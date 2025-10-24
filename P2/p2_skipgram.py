@@ -3,8 +3,10 @@ from P1 import ByteLevelBPE
 import numpy as np
 import pickle
 import tqdm
+import os
 
 # Una embedding es una codificación que hace la red neuronal para una entrada dada.
+current_directory = os.path.dirname(os.path.abspath(__file__))
 
 
 def sigmoid(x):
@@ -78,14 +80,14 @@ class Trainer:
     def train(self):
         # 1.3: Inicializa dos matrices de `self.vocab_size` x `self.embedding_dim` para tokens
         # centrales y contexto.
-        centralEmbeddings = np.random.uniform(
-            low=-0.5 / self.embedding_dim,
-            high=0.5 / self.embedding_dim,
+        centralEmbeddings = self.rng.normal(
+            loc=0.0,
+            scale=0.1,
             size=(len(self.bpe.vocab), self.embedding_dim),
         ).astype(np.float32)
-        contextEmbeddings = np.random.uniform(
-            low=-0.5 / self.embedding_dim,
-            high=0.5 / self.embedding_dim,
+        contextEmbeddings = self.rng.normal(
+            loc=0.0,
+            scale=0.1,
             size=(len(self.bpe.vocab), self.embedding_dim),
         ).astype(np.float32)
 
@@ -95,6 +97,7 @@ class Trainer:
 
         # 1.4: Para cada `epoch` y para cada token en el corpus
         for epoch in range(self.epochs):
+            loss = 0.0
             barEpoch = tqdm.tqdm(
                 total=len(self.corpus),
                 desc=f"Epoch {epoch+1}",
@@ -170,19 +173,26 @@ class Trainer:
                     """
                     self.window_size = self.rng.integers(1, self.window_size + 1)
 
+                    # Criterion: entropy loss
+                    loss += -np.sum(np.log(pos_score + 1e-10)) - np.sum(
+                        np.log(1 - neg_score + 1e-10)
+                    )
+
                 barEpoch.update(1)
                 barTrain.update(1)
 
             # 5: Haz que el LR disminuya progresivamente durante el entrenamiento (linear decay).
             self.lr += (self.lr_min_factor - self.lr) / (self.epochs - epoch)
+            print(f" Epoch {epoch+1} Loss: {loss:.4f} LR: {self.lr:.6f}")
 
         # 1.5: Devuelve las dos matrices de embeddings.
         return centralEmbeddings, contextEmbeddings
 
 
 def dump_embeddings(
-    # ...
     E,
+    bpe: ByteLevelBPE,
+    file_path: str = os.path.join(current_directory, "skipgram_embeddings.txt"),
 ):
     # TODO 1.6: Escribe las embeddings en un fichero de texto donde,
     # en la primera fila, aparezca el tamaño del vocabulario y el
@@ -190,7 +200,36 @@ def dump_embeddings(
     # cada token seguido de su correspondiente embedding, separando
     # cada elemento con espacios simples.
     # Ojo, los tokens pueden contener espacios.
-    pass
+    with open(file_path, "w", encoding="utf-8") as f:
+        vocab_size, embedding_dim = E.shape
+        f.write(f"{vocab_size} {embedding_dim}\n")
+        for token, token_id in bpe.vocab.items():
+            # Map takes each number of the vector and transforms it in a str
+            # Join puts a space between each element of the list
+            embedding = " ".join(map(str, E[token_id]))
+            readable_token = bpe.decode([token_id])
+            f.write(f"{token} {token_id} {readable_token} {embedding}\n")
+
+
+def print_similar_embeddings(bpe: ByteLevelBPE, E: np.ndarray, top_k: int = 10):
+
+    # Add new axis to get the matrix of differences n x n x dimensions
+    # Then compute the norm along the last axis
+    diff = E[:, np.newaxis, :] - E[np.newaxis, :, :]
+
+    dists = np.linalg.norm(diff, axis=-1)
+
+    # Avoid zero distances (self-distances)
+    np.fill_diagonal(dists, np.inf)
+
+    # Get the indices of the top_k closest embeddings
+    flat_indices = np.argsort(dists, axis=None)[:top_k]
+    pairs = np.array(np.unravel_index(flat_indices, dists.shape)).T
+
+    for i, j in pairs:
+        print(
+            f"Token 1: {bpe.decode([i])}, id: {i} | Token 2: {bpe.decode([j])}, id: {j}"
+        )
 
 
 def main():
@@ -208,9 +247,11 @@ def main():
     T, C = trainer.train()
     E = (T + C) / 2.0  # Matriz final de embeddings
     dump_embeddings(
-        # ...
-        E
+        E,
+        trainer.bpe,
     )
+
+    print_similar_embeddings(trainer.bpe, E, top_k=10)
 
 
 if __name__ == "__main__":

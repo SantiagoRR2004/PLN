@@ -261,7 +261,7 @@ class ByteLevelBPE:
         Convierte una lista de token IDs en texto.
         """
         intTokens = [self.id2bytes[i] for i in ids]
-        return "".join([bytes(b).decode("utf-8") for b in intTokens])
+        return "".join([bytes(b).decode("utf-8", errors="replace") for b in intTokens])
 
     def tokenize(self, text: str) -> List[Tuple[int, ...]]:
         """
