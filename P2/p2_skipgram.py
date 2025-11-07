@@ -101,7 +101,7 @@ class Trainer:
         self.ax.clear()
         # Plot the losses
         self.ax.plot(
-            self.losses, range(1, len(self.losses) + 1), label="Loss", color="red"
+            range(1, len(self.losses) + 1), self.losses, label="Loss", color="red"
         )
         self.ax.set_xlabel("Epoch")
         self.ax.set_ylabel("Loss")
@@ -232,21 +232,34 @@ class Trainer:
             self.losses.append(loss / sum(len(samples) for samples in self.corpus))
             self.update_plot()
 
+        plt.ioff()
+        plt.savefig(os.path.join(current_directory, "loss.png"))
+
         # 1.5: Devuelve las dos matrices de embeddings.
         return centralEmbeddings, contextEmbeddings
 
 
 def dump_embeddings(
-    E,
+    E: np.ndarray,
     bpe: ByteLevelBPE,
     file_path: str = os.path.join(current_directory, "skipgram_embeddings.txt"),
-):
-    # TODO 1.6: Escribe las embeddings en un fichero de texto donde,
-    # en la primera fila, aparezca el tamaño del vocabulario y el
-    # número de dimensiones de las embeddings y, en el resto de filas,
-    # cada token seguido de su correspondiente embedding, separando
-    # cada elemento con espacios simples.
-    # Ojo, los tokens pueden contener espacios.
+) -> None:
+    """
+    1.6: Escribe las embeddings en un fichero de texto donde,
+    en la primera fila, aparezca el tamaño del vocabulario y el
+    número de dimensiones de las embeddings y, en el resto de filas,
+    cada token seguido de su correspondiente embedding, separando
+    cada elemento con espacios simples.
+    Ojo, los tokens pueden contener espacios.
+
+    Args:
+        - E (np.ndarray): Matriz de embeddings.
+        - bpe (ByteLevelBPE): Modelo BPE usado para tokenizar.
+        - file_path (str): Ruta del fichero donde se guardarán las embeddings.
+
+    Returns:
+        - None
+    """
     with open(file_path, "w", encoding="utf-8") as f:
         vocab_size, embedding_dim = E.shape
         f.write(f"{vocab_size} {embedding_dim}\n")
