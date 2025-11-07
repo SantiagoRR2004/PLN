@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from typing import List
 from P1 import ByteLevelBPE
 import numpy as np
@@ -53,6 +54,8 @@ class Trainer:
         self.lr_min_factor = lr_min_factor
         self.neg_samples = neg_samples
 
+        self.setup_plot()
+
         # 1.1: Carga el corpus y tokenízalo usando el tokenizador BPE de la práctica anterior.
         # El corpus debería quedar codificado como una secuencia de ids de tokens.
         with open("bpe_model.pkl", "rb") as f:
@@ -66,6 +69,47 @@ class Trainer:
         # Aplica ajustes para evitar la sobreponderancia de tokens frecuentes
         self._neg_sampling_fix()
         self._subsample_data()
+
+    def setup_plot(self) -> None:
+        """
+        Show the live plot for loss visualization.
+
+        Args:
+            - None
+
+        Returns:
+            - None
+        """
+        plt.ion()
+        self.fig, self.ax = plt.subplots()
+        self.ax.set_xlabel("Epoch")
+        self.ax.set_ylabel("Loss")
+        self.ax.set_title("Loss during Training")
+        self.fig.show()
+        plt.pause(0.1)
+
+    def update_plot(self) -> None:
+        """
+        Update the live plot with the latest loss values.
+
+        Args:
+            - None
+
+        Returns:
+            - None
+        """
+        self.ax.clear()
+        # Plot the losses
+        self.ax.plot(
+            self.losses, range(1, len(self.losses) + 1), label="Loss", color="red"
+        )
+        self.ax.set_xlabel("Epoch")
+        self.ax.set_ylabel("Loss")
+        self.ax.set_title("Loss during Training")
+        self.ax.legend()
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+        plt.pause(0.001)
 
     def sample_neg(self, forbidden) -> List[int]:
         # 1.2: Obtén una muestra negativa de tokens, evitando seleccionar aquellos en
@@ -94,6 +138,8 @@ class Trainer:
         barTrain = tqdm.tqdm(
             total=self.epochs * len(self.corpus), desc="Training", position=0
         )
+
+        self.losses = []
 
         # 1.4: Para cada `epoch` y para cada token en el corpus
         for epoch in range(self.epochs):
@@ -183,7 +229,8 @@ class Trainer:
 
             # 5: Haz que el LR disminuya progresivamente durante el entrenamiento (linear decay).
             self.lr += (self.lr_min_factor - self.lr) / (self.epochs - epoch)
-            print(f" Epoch {epoch+1} Loss: {loss:.4f} LR: {self.lr:.6f}")
+            self.losses.append(loss / sum(len(samples) for samples in self.corpus))
+            self.update_plot()
 
         # 1.5: Devuelve las dos matrices de embeddings.
         return centralEmbeddings, contextEmbeddings
