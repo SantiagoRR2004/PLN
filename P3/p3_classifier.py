@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 
-# TODO 1: Implementa funciones para cargar token embeddings de un modelo entrenado y para obtener una sola embedding por texto de entrada. Puedes usar la función de agregación que quieras. 
+# TODO 1: Implementa funciones para cargar token embeddings de un modelo entrenado y para obtener una sola embedding por texto de entrada. Puedes usar la función de agregación que quieras.
 
 # TODO 2: Implementa la clase LogisticRegression con los siguientes componentes:
 # * Campos para almacenar los pesos, sesgo y learning rate.
