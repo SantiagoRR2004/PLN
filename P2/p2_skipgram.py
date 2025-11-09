@@ -256,6 +256,9 @@ class Trainer:
             self.losses.append(loss / sum(len(samples) for samples in self.corpus))
             self.update_plot()
 
+        barEpoch.close()
+        barTrain.close()
+
         plt.ioff()
         plt.savefig(os.path.join(currentDirectory, "loss.png"))
 
@@ -291,7 +294,7 @@ def dump_embeddings(
             # Map takes each number of the vector and transforms it in a str
             # Join puts a space between each element of the list
             embedding = " ".join(map(str, E[token_id]))
-            readable_token = bpe.decode([token_id])
+            readable_token = repr(bpe.decode([token_id]))
             f.write(f"{token} {token_id} {readable_token} {embedding}\n")
 
 
@@ -312,7 +315,7 @@ def print_similar_embeddings(bpe: ByteLevelBPE, E: np.ndarray, top_k: int = 10):
 
     for i, j in pairs:
         print(
-            f"Token 1: {bpe.decode([i])}, id: {i} | Token 2: {bpe.decode([j])}, id: {j}"
+            f"Token 1: {repr(bpe.decode([i]))}, id: {i} | Token 2: {repr(bpe.decode([j]))}, id: {j}"
         )
 
 

@@ -220,10 +220,7 @@ class ByteLevelBPE:
         """
         Convierte el texto de entrada en una lista de token IDs.
 
-        TODO: Make this more efficient
-        Maybe use a different data sctructure to merge
-        instead of doing each time a full pass over the tokens
-        for each merge.
+        It uses the encoder tree to do the merges more efficiently.
 
         Args:
             - text: text to encode
@@ -261,7 +258,14 @@ class ByteLevelBPE:
         Convierte una lista de token IDs en texto.
         """
         intTokens = [self.id2bytes[i] for i in ids]
-        return "".join([bytes(b).decode("utf-8", errors="replace") for b in intTokens])
+        result = []
+        for b in intTokens:
+            # byte_val = b[0]
+            try:
+                result.append(bytes(b).decode("utf-8"))
+            except UnicodeDecodeError:
+                result.append(f"\\x{b[0]:02x}")  # hex escape
+        return "".join(result)
 
     def tokenize(self, text: str) -> List[Tuple[int, ...]]:
         """
