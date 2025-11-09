@@ -12,7 +12,7 @@ texts = [
     "Bag of words is a classic method",
     "Transformers changed the field",
     "Text is just data",
-    "Machine learning is everywhere"
+    "Machine learning is everywhere",
 ]
 y = np.array([len(t.split()) for t in texts])
 
