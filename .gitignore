@@ -3,6 +3,7 @@ __pycache__
 
 # Pickled files
 *.pkl
+skipgram_embeddings.txt
 
 # The graphs
 *.png

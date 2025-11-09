@@ -1,13 +1,14 @@
 import matplotlib.pyplot as plt
-from typing import List
+from collections import Counter
 from P1 import ByteLevelBPE
+from typing import List
 import numpy as np
 import pickle
 import tqdm
 import os
 
 # Una embedding es una codificación que hace la red neuronal para una entrada dada.
-current_directory = os.path.dirname(os.path.abspath(__file__))
+currentDirectory = os.path.dirname(os.path.abspath(__file__))
 
 
 def sigmoid(x):
@@ -20,19 +21,39 @@ def sigmoid(x):
     return out
 
 
-# TODO 1: Implementa un método de entrenamiento simple, esto es, con learning rate (LR) constante y ventana estática.
 class Trainer:
-    def _neg_sampling_fix(self):
-        # TODO 2: Inicializa `self.neg_prob`, que será usado como distribución de probabilidad
-        # a la hora de hacer el muestreo negativo, de modo que contenga las frecuencias
-        # relativas de cada token del vocabulario elevadas a 2/3.
-        pass
+    def _neg_sampling_fix(self) -> None:
+        """
+        2: Inicializa `self.neg_prob`, que será usado como distribución de probabilidad
+        a la hora de hacer el muestreo negativo, de modo que contenga las frecuencias
+        relativas de cada token del vocabulario elevadas a 3/4.
+        """
+        freq = dict(Counter([token for sentence in self.corpus for token in sentence]))
+        freq = {token: (count ** (3 / 4)) for token, count in freq.items()}
+        total = sum(freq.values())
+        self.neg_prob = {token: count / total for token, count in freq.items()}
 
-    def _subsample_data(self):
-        # TODO 3: Reduce la ocurrencia de los tokens más frecuentes usando la siguiente fórmula:
-        # `p_keep = (np.sqrt(t / f) + t / f) if f > 0 else 1.0`
-        # donde `t = 1e-5` y `f` es la frecuencia relativa del token.
-        pass
+    def _subsample_data(self) -> None:
+        """
+        3: Reduce la ocurrencia de los tokens más frecuentes usando la siguiente fórmula:
+        `p_keep = (np.sqrt(t / f) + t / f) if f > 0 else 1.0`
+        donde `t = 1e-5` y `f` es la frecuencia relativa del token.
+        """
+        t = 1e-5
+        freq = dict(Counter([token for sentence in self.corpus for token in sentence]))
+        total = sum(freq.values())
+        freq = {token: count / total for token, count in freq.items()}
+        newCorpus = []
+        for sentence in self.corpus:
+            newSentence = []
+            for token in sentence:
+                f = freq[token]
+                p_keep = (np.sqrt(t / f) + t / f) if f > 0 else 1.0
+                if self.rng.random() < p_keep:
+                    newSentence.append(token)
+            newCorpus.append(newSentence)
+
+        self.corpus = newCorpus
 
     def __init__(
         self,
@@ -116,7 +137,10 @@ class Trainer:
         # `forbidden`, que serán los que estén dentro de la ventana actual.
         samples = []
         while len(samples) < self.neg_samples:
-            token = self.rng.choice(list(self.bpe.vocab.values()))
+            token = self.rng.choice(
+                list(self.neg_prob.keys()),
+                p=np.array(list(self.neg_prob.values())),
+            )
             if token not in forbidden and token not in samples:
                 samples.append(token)
         return samples
@@ -233,7 +257,7 @@ class Trainer:
             self.update_plot()
 
         plt.ioff()
-        plt.savefig(os.path.join(current_directory, "loss.png"))
+        plt.savefig(os.path.join(currentDirectory, "loss.png"))
 
         # 1.5: Devuelve las dos matrices de embeddings.
         return centralEmbeddings, contextEmbeddings
@@ -242,7 +266,7 @@ class Trainer:
 def dump_embeddings(
     E: np.ndarray,
     bpe: ByteLevelBPE,
-    file_path: str = os.path.join(current_directory, "skipgram_embeddings.txt"),
+    file_path: str = os.path.join(currentDirectory, "skipgram_embeddings.txt"),
 ) -> None:
     """
     1.6: Escribe las embeddings en un fichero de texto donde,
