@@ -300,22 +300,39 @@ def dump_embeddings(
 
 def print_similar_embeddings(bpe: ByteLevelBPE, E: np.ndarray, top_k: int = 10):
 
+    # First, identify which tokens to keep
+    valid_token_ids = []
+    for token_id in bpe.vocab.values():
+        decoded_repr = repr(bpe.decode([token_id]))
+
+        # Keep only tokens that don't start with '\x' or '\\x'
+        if not (decoded_repr.startswith("'\\x") or decoded_repr.startswith("'\\\\x")):
+            valid_token_ids.append(token_id)
+
+    # Filter the embeddings matrix
+    E = E[valid_token_ids]
+
     # Add new axis to get the matrix of differences n x n x dimensions
     # Then compute the norm along the last axis
     diff = E[:, np.newaxis, :] - E[np.newaxis, :, :]
 
     dists = np.linalg.norm(diff, axis=-1)
 
-    # Avoid zero distances (self-distances)
-    np.fill_diagonal(dists, np.inf)
+    # Also only the upper triangle to avoid duplicates
+    dists = np.triu(dists)
+    dists[dists == 0] = np.inf
 
     # Get the indices of the top_k closest embeddings
     flat_indices = np.argsort(dists, axis=None)[:top_k]
     pairs = np.array(np.unravel_index(flat_indices, dists.shape)).T
 
     for i, j in pairs:
+        # Map back to original token IDs
+        token_id_i = valid_token_ids[i]
+        token_id_j = valid_token_ids[j]
         print(
-            f"Token 1: {repr(bpe.decode([i]))}, id: {i} | Token 2: {repr(bpe.decode([j]))}, id: {j}"
+            f"Token 1: {repr(bpe.decode([token_id_i])):<10} id: {token_id_i:<5} | ",
+            f"Token 2: {repr(bpe.decode([token_id_j])):<10} id: {token_id_j}",
         )
 
 

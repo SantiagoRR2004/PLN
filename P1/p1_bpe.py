@@ -260,11 +260,10 @@ class ByteLevelBPE:
         intTokens = [self.id2bytes[i] for i in ids]
         result = []
         for b in intTokens:
-            # byte_val = b[0]
             try:
                 result.append(bytes(b).decode("utf-8"))
             except UnicodeDecodeError:
-                result.append(f"\\x{b[0]:02x}")  # hex escape
+                result.append("\\" + f"x{b[0]:02x}")  # hex escape
         return "".join(result)
 
     def tokenize(self, text: str) -> List[Tuple[int, ...]]:
