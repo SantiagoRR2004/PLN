@@ -269,7 +269,9 @@ class Trainer:
 def dump_embeddings(
     E: np.ndarray,
     bpe: ByteLevelBPE,
-    file_path: str = os.path.join(currentDirectory, "skipgram_embeddings.txt"),
+    file_path: str = os.path.join(
+        os.path.dirname(currentDirectory), "skipgram_embeddings.txt"
+    ),
 ) -> None:
     """
     1.6: Escribe las embeddings en un fichero de texto donde,
