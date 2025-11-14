@@ -1,12 +1,14 @@
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from datasets import load_dataset
 
 # Carga el dataset
 dataset = load_dataset("imdb")
 
-# TODO 1: Carga el tokenizador y el modelo a refinar
+# 1: Carga el tokenizador y el modelo a refinar
 model_name = "prajjwal1/bert-tiny"  # or "distilbert-base-uncased"
-# tokenizer = ...
-# model = ...
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
 
 # TODO 2: Tokeniza el dataset
 
