@@ -396,13 +396,16 @@ def print_similar_embeddings(bpe: ByteLevelBPE, E: np.ndarray, top_k: int = 10):
 
 
 def main():
+    # For the final graph
+    losses = {}
+
     for m in ["cbow", "skipgram"]:
         trainer = Trainer(
             corpus_fpath="P0/tiny_cc_news.txt",
             rng=np.random.default_rng(42),
             embedding_dim=100,
             window_size=5,
-            epochs=5,
+            epochs=50,
             lr=0.05,
             lr_min_factor=0.0001,
             neg_samples=5,
@@ -410,6 +413,9 @@ def main():
         )
 
         T, C = trainer.train()
+
+        losses[m] = trainer.losses
+
         E = (T + C) / 2.0  # Matriz final de embeddings
         dump_embeddings(
             E,
@@ -420,6 +426,16 @@ def main():
         )
 
         print_similar_embeddings(trainer.bpe, E, top_k=10)
+
+    # Final plot
+    fig, ax = plt.subplots()
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Loss")
+    ax.set_title("Loss during Training")
+    for m in losses:
+        ax.plot(range(1, len(losses[m]) + 1), losses[m], label=m.capitalize())
+    ax.legend()
+    plt.savefig(os.path.join(currentDirectory, "loss.png"))
 
 
 if __name__ == "__main__":
