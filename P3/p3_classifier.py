@@ -64,14 +64,16 @@ def obtainEmbeddings(
     return np.mean(embeddings[tokenIds], axis=0)
 
 
-# TODO 2: Implementa la clase LogisticRegression con los siguientes componentes:
+# 2: Implementa la clase LogisticRegression con los siguientes componentes:
 class LogisticRegression:
-    def __init__(self, learningRate: float = 0.01) -> None:
+
+    def __init__(self, learningRate: float = 0.01, epochs: int = 100000) -> None:
         """
         Campos para almacenar los pesos, sesgo y learning rate.
 
         Args:
             - learningRate (float): The learning rate for gradient descent.
+            - epochs (int): The number of training epochs.
 
         Returns:
             - None
@@ -79,6 +81,7 @@ class LogisticRegression:
         self.weights: np.ndarray = None
         self.bias: float = 0.0
         self.lr = learningRate
+        self.epochs = epochs
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         """
@@ -96,8 +99,28 @@ class LogisticRegression:
         return activations
 
     def backward(self, X: np.ndarray, yPred: np.ndarray, yTrue: np.ndarray) -> None:
-        # * Método `backward` que, dada la entrada, la salida obtenida y la salida deseada, modifique los parámetros del modelo.
-        pass
+        """
+        Método `backward` que, dada la entrada, la salida obtenida y
+        la salida deseada, modifique los parámetros del modelo.
+
+        Args:
+            - X (np.ndarray): Input data of shape (numSamples, numFeatures).
+            - yPred (np.ndarray): Predicted probabilities of shape (numSamples,).
+            - yTrue (np.ndarray): True class labels of shape (numSamples,).
+
+        Returns:
+            - None
+        """
+        numSamples = X.shape[0]
+        error = yPred - yTrue
+
+        # Compute gradients
+        dW = (1 / numSamples) * (X.T @ error)
+        dB = (1 / numSamples) * np.sum(error)
+
+        # Update weights and bias
+        self.weights -= self.lr * dW
+        self.bias -= self.lr * dB
 
     def compute_loss(self, yPred: np.ndarray, yTrue: np.ndarray) -> float:
         """
@@ -116,8 +139,26 @@ class LogisticRegression:
         return -np.mean(positiveLoss + negativeLoss)
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
-        # * Método `fit`, que recibe los datos de entrenamiento y optimiza el modelo mediante descenso de gradiente.
-        pass
+        """
+        Método `fit`, que recibe los datos de entrenamiento y
+        optimiza el modelo mediante descenso de gradiente.
+
+        Args:
+            - X (np.ndarray): Training data of shape (numSamples, numFeatures).
+            - y (np.ndarray): True class labels of shape (numSamples,).
+
+        Returns:
+            - None
+        """
+        # Initialize weights
+        self.weights = np.zeros(X.shape[1])
+
+        for _ in range(self.epochs):
+            # Get predictions
+            yPred = self.forward(X)
+
+            # Gradient descent step
+            self.backward(X, yPred, y)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -133,7 +174,7 @@ class LogisticRegression:
 
 
 def main() -> None:
-    """TODO 3: Implementa una función principal que realice todos
+    """3: Implementa una función principal que realice todos
     los pasos necesarios para entrenar y evaluar un modelo de
     regresión logística que usa agregados de token embeddings como características.
 
