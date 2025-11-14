@@ -148,12 +148,12 @@ class Trainer:
     def train(self):
         # 1.3: Inicializa dos matrices de `self.vocab_size` x `self.embedding_dim` para tokens
         # centrales y contexto.
-        centralEmbeddings = self.rng.normal(
+        self.centralEmbeddings = self.rng.normal(
             loc=0.0,
             scale=0.1,
             size=(len(self.bpe.vocab), self.embedding_dim),
         ).astype(np.float32)
-        contextEmbeddings = self.rng.normal(
+        self.contextEmbeddings = self.rng.normal(
             loc=0.0,
             scale=0.1,
             size=(len(self.bpe.vocab), self.embedding_dim),
@@ -188,53 +188,7 @@ class Trainer:
                         + sentence[i + 1 : min(i + self.window_size + 1, len(sentence))]
                     )
 
-                    # Calcular el producto escalar entre las embeddings del token central y token de contexto.
-                    scalar = np.dot(
-                        centralEmbeddings[centralToken],
-                        contextEmbeddings[window].T,
-                    )
-
-                    # Pasar el resultado por la función `sigmoid`, obteniendo `pos_score`.
-                    pos_score = sigmoid(scalar)
-
-                    """
-                    Muestra positiva: actualizar las embeddings del token central y
-                    token contexto usando el LR, `(1 - pos_score)` y la embedding
-                    (¡original!) del otro token.
-                    """
-                    centralEmbeddings[centralToken] += self.lr * np.sum(
-                        (1 - pos_score)[:, np.newaxis] * contextEmbeddings[window],
-                        axis=0,
-                    )
-                    contextEmbeddings[window] += (
-                        self.lr
-                        * (1 - pos_score)[:, np.newaxis]
-                        * centralEmbeddings[centralToken]
-                    )
-
-                    # Muestras negativas
-                    # Obtener muestras negativas para el token central
-                    negativeSamples = self.sample_neg(forbidden=window + [centralToken])
-                    # Para cada una, realizar un proceso similar al de la muestra positiva
-                    # Ahora `pos_score` es `neg_score`
-                    neg_score = sigmoid(
-                        np.dot(
-                            centralEmbeddings[centralToken],
-                            contextEmbeddings[negativeSamples].T,
-                        )
-                    )
-
-                    # Se usa `-neg_score` para actualizar las embeddings.
-                    centralEmbeddings[centralToken] += self.lr * np.sum(
-                        (-neg_score)[:, np.newaxis]
-                        * contextEmbeddings[negativeSamples],
-                        axis=0,
-                    )
-                    contextEmbeddings[negativeSamples] += (
-                        self.lr
-                        * -neg_score[:, np.newaxis]
-                        * centralEmbeddings[centralToken]
-                    )
+                    pos_score, neg_score = self.skipgram(centralToken, window)
 
                     """
                     4: Usa una ventana de contexto dinámica,
@@ -263,7 +217,55 @@ class Trainer:
         plt.savefig(os.path.join(currentDirectory, "loss.png"))
 
         # 1.5: Devuelve las dos matrices de embeddings.
-        return centralEmbeddings, contextEmbeddings
+        return self.centralEmbeddings, self.contextEmbeddings
+
+    def skipgram(self, centralToken, window):
+        # Calcular el producto escalar entre las embeddings del token central y token de contexto.
+        scalar = np.dot(
+            self.centralEmbeddings[centralToken],
+            self.contextEmbeddings[window].T,
+        )
+
+        # Pasar el resultado por la función `sigmoid`, obteniendo `pos_score`.
+        pos_score = sigmoid(scalar)
+
+        """
+        Muestra positiva: actualizar las embeddings del token central y
+        token contexto usando el LR, `(1 - pos_score)` y la embedding
+        (¡original!) del otro token.
+        """
+        self.centralEmbeddings[centralToken] += self.lr * np.sum(
+            (1 - pos_score)[:, np.newaxis] * self.contextEmbeddings[window],
+            axis=0,
+        )
+        self.contextEmbeddings[window] += (
+            self.lr
+            * (1 - pos_score)[:, np.newaxis]
+            * self.centralEmbeddings[centralToken]
+        )
+
+        # Muestras negativas
+        # Obtener muestras negativas para el token central
+        negativeSamples = self.sample_neg(forbidden=window + [centralToken])
+        # Para cada una, realizar un proceso similar al de la muestra positiva
+        # Ahora `pos_score` es `neg_score`
+        neg_score = sigmoid(
+            np.dot(
+                self.centralEmbeddings[centralToken],
+                self.contextEmbeddings[negativeSamples].T,
+            )
+        )
+
+        # Se usa `-neg_score` para actualizar las embeddings.
+        self.centralEmbeddings[centralToken] += self.lr * np.sum(
+            (-neg_score)[:, np.newaxis] * self.contextEmbeddings[negativeSamples],
+            axis=0,
+        )
+        self.contextEmbeddings[negativeSamples] += (
+            self.lr * -neg_score[:, np.newaxis] * self.centralEmbeddings[centralToken]
+        )
+
+        return pos_score, neg_score
 
 
 def dump_embeddings(
