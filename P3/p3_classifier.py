@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from P1 import ByteLevelBPE
 import numpy as np
 import pickle
@@ -153,12 +154,17 @@ class LogisticRegression:
         # Initialize weights
         self.weights = np.zeros(X.shape[1])
 
+        self.losses = []
+
         for _ in range(self.epochs):
             # Get predictions
             yPred = self.forward(X)
 
             # Gradient descent step
             self.backward(X, yPred, y)
+
+            # Compute and store loss
+            self.losses.append(self.compute_loss(yPred, y))
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -182,6 +188,9 @@ def main() -> None:
     NOTA: no es necesario almacenar el modelo de regresión.
     """
     sentimentFile = os.path.join(currentDirectory, "sentiment_analysis.tsv")
+
+    # For the final graph
+    losses = {}
 
     for mode in ["skipgram", "cbow"]:
 
@@ -213,6 +222,17 @@ def main() -> None:
         yPred = model.predict(XTest)
         accuracy = np.mean(yPred == yTest)
         print(f"{mode.capitalize()} Accuracy: {accuracy:.4f}")
+
+        losses[mode] = model.losses
+
+    # Plotting the losses
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Training Loss Sentiment Analysis")
+    for mode in losses:
+        plt.plot(losses[mode], label=f"{mode.capitalize()}")
+    plt.legend()
+    plt.savefig(os.path.join(currentDirectory, "loss.png"))
 
 
 if __name__ == "__main__":

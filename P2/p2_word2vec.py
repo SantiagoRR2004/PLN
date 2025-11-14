@@ -405,7 +405,7 @@ def main():
             rng=np.random.default_rng(42),
             embedding_dim=100,
             window_size=5,
-            epochs=50,
+            epochs=5,
             lr=0.05,
             lr_min_factor=0.0001,
             neg_samples=5,
