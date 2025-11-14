@@ -65,6 +65,7 @@ class Trainer:
         lr: float,
         lr_min_factor: float,
         neg_samples: int,
+        model: str = "skipgram",
     ):
         self.corpus_fpath = corpus_fpath
         self.rng = rng
@@ -74,6 +75,7 @@ class Trainer:
         self.lr = lr
         self.lr_min_factor = lr_min_factor
         self.neg_samples = neg_samples
+        self.model = model
 
         self.setup_plot()
 
@@ -105,7 +107,7 @@ class Trainer:
         self.fig, self.ax = plt.subplots()
         self.ax.set_xlabel("Epoch")
         self.ax.set_ylabel("Loss")
-        self.ax.set_title("Loss during Training")
+        self.ax.set_title(f"Loss during Training ({self.model})")
         self.fig.show()
         plt.pause(0.1)
 
@@ -126,7 +128,7 @@ class Trainer:
         )
         self.ax.set_xlabel("Epoch")
         self.ax.set_ylabel("Loss")
-        self.ax.set_title("Loss during Training")
+        self.ax.set_title(f"Loss during Training ({self.model})")
         self.ax.legend()
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
@@ -160,7 +162,9 @@ class Trainer:
         ).astype(np.float32)
 
         barTrain = tqdm.tqdm(
-            total=self.epochs * len(self.corpus), desc="Training", position=0
+            total=self.epochs * len(self.corpus),
+            desc=f"Training ({self.model})",
+            position=0,
         )
 
         self.losses = []
@@ -192,7 +196,10 @@ class Trainer:
                     if len(window) == 0:
                         continue
 
-                    pos_score, neg_score = self.skipgram(centralToken, window)
+                    if self.model == "cbow":
+                        pos_score, neg_score = self.cbow(centralToken, window)
+                    elif self.model == "skipgram":
+                        pos_score, neg_score = self.skipgram(centralToken, window)
 
                     """
                     4: Usa una ventana de contexto dinámica,
@@ -218,7 +225,9 @@ class Trainer:
         barTrain.close()
 
         plt.ioff()
-        plt.savefig(os.path.join(currentDirectory, "loss.png"))
+        plt.savefig(
+            os.path.join(currentDirectory, f"loss{self.model.capitalize()}.png")
+        )
 
         # 1.5: Devuelve las dos matrices de embeddings.
         return self.centralEmbeddings, self.contextEmbeddings
@@ -387,25 +396,30 @@ def print_similar_embeddings(bpe: ByteLevelBPE, E: np.ndarray, top_k: int = 10):
 
 
 def main():
-    trainer = Trainer(
-        corpus_fpath="P0/tiny_cc_news.txt",
-        rng=np.random.default_rng(42),
-        embedding_dim=100,
-        window_size=5,
-        epochs=5,
-        lr=0.05,
-        lr_min_factor=0.0001,
-        neg_samples=5,
-    )
+    for m in ["cbow", "skipgram"]:
+        trainer = Trainer(
+            corpus_fpath="P0/tiny_cc_news.txt",
+            rng=np.random.default_rng(42),
+            embedding_dim=100,
+            window_size=5,
+            epochs=5,
+            lr=0.05,
+            lr_min_factor=0.0001,
+            neg_samples=5,
+            model=m,
+        )
 
-    T, C = trainer.train()
-    E = (T + C) / 2.0  # Matriz final de embeddings
-    dump_embeddings(
-        E,
-        trainer.bpe,
-    )
+        T, C = trainer.train()
+        E = (T + C) / 2.0  # Matriz final de embeddings
+        dump_embeddings(
+            E,
+            trainer.bpe,
+            file_path=os.path.join(
+                os.path.dirname(currentDirectory), f"{m}_embeddings.txt"
+            ),
+        )
 
-    print_similar_embeddings(trainer.bpe, E, top_k=10)
+        print_similar_embeddings(trainer.bpe, E, top_k=10)
 
 
 if __name__ == "__main__":
