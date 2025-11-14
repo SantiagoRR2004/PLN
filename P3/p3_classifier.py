@@ -66,29 +66,70 @@ def obtainEmbeddings(
 
 # TODO 2: Implementa la clase LogisticRegression con los siguientes componentes:
 class LogisticRegression:
-    def __init__(self):
-        # * Campos para almacenar los pesos, sesgo y learning rate.
-        pass
+    def __init__(self, learningRate: float = 0.01) -> None:
+        """
+        Campos para almacenar los pesos, sesgo y learning rate.
+
+        Args:
+            - learningRate (float): The learning rate for gradient descent.
+
+        Returns:
+            - None
+        """
+        self.weights: np.ndarray = None
+        self.bias: float = 0.0
+        self.lr = learningRate
 
     def forward(self, X: np.ndarray) -> np.ndarray:
-        # * Método `forward`, que implemente la combinación lineal de los pesos y sesgo con la entrada seguida de la función logística.
-        pass
+        """
+        Método `forward`, que implemente la combinación lineal
+        de los pesos y sesgo con la entrada seguida de la función logística.
+
+        Args:
+            - X (np.ndarray): Input data of shape (numSamples, numFeatures).
+
+        Returns:
+            - np.ndarray: Predicted probabilities of shape (numSamples,).
+        """
+        output = X @ self.weights + self.bias
+        activations = 1 / (1 + np.exp(-output))
+        return activations
 
     def backward(self, X: np.ndarray, yPred: np.ndarray, yTrue: np.ndarray) -> None:
         # * Método `backward` que, dada la entrada, la salida obtenida y la salida deseada, modifique los parámetros del modelo.
         pass
 
     def compute_loss(self, yPred: np.ndarray, yTrue: np.ndarray) -> float:
-        # * Método `compute_loss`, que implemente la función de entropía cruzada binaria.
-        pass
+        """
+        Método `compute_loss`, que implemente la función de entropía cruzada binaria.
+
+        Args:
+            - yPred (np.ndarray): Predicted probabilities of shape (numSamples,).
+            - yTrue (np.ndarray): True class labels of shape (numSamples,).
+
+        Returns:
+            - float: Computed binary cross-entropy loss.
+        """
+        positiveLoss = yTrue * np.log(yPred)
+        negativeLoss = (1 - yTrue) * np.log(1 - yPred)
+
+        return -np.mean(positiveLoss + negativeLoss)
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         # * Método `fit`, que recibe los datos de entrenamiento y optimiza el modelo mediante descenso de gradiente.
         pass
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        # # Método `predict`, que usa `forward` y obtiene la salida final de inferencia en `{0, 1}`.
-        pass
+        """
+        Método `predict`, que usa `forward` y obtiene la salida final de inferencia en `{0, 1}`.
+
+        Args:
+            - X (np.ndarray): Input data of shape (numSamples, numFeatures).
+
+        Returns:
+            - np.ndarray: Predicted class labels of shape (numSamples,).
+        """
+        return (self.forward(X) >= 0.5).astype(int)
 
 
 def main() -> None:
