@@ -91,6 +91,40 @@ class LogisticRegression:
         pass
 
 
-# TODO 3: Implementa una función principal que realice todos los pasos necesarios para entrenar y evaluar un modelo de regresión logística que usa agregados de token embeddings como características.
+def main() -> None:
+    """TODO 3: Implementa una función principal que realice todos
+    los pasos necesarios para entrenar y evaluar un modelo de
+    regresión logística que usa agregados de token embeddings como características.
 
-# NOTA: no es necesario almacenar el modelo de regresión.
+    NOTA: no es necesario almacenar el modelo de regresión.
+    """
+    sentimentFile = os.path.join(currentDirectory, "sentiment_analysis.tsv")
+
+    features = []
+    labels = []
+    embeddings = loadEmbeddings()
+
+    with open(sentimentFile, "r", encoding="utf-8") as f:
+        for line in f:
+            text, label = line.strip().split("\t")
+            embedding = obtainEmbeddings(text, embeddings)
+            features.append(embedding)
+            labels.append(int(label))
+
+    features = np.array(features)
+    labels = np.array(labels)
+
+    # Split data into training and testing sets
+    splitIndex = int(0.8 * len(features))
+    XTrain, XTest = features[:splitIndex], features[splitIndex:]
+    yTrain, yTest = labels[:splitIndex], labels[splitIndex:]
+
+    model = LogisticRegression()
+    model.fit(XTrain, yTrain)
+    yPred = model.predict(XTest)
+    accuracy = np.mean(yPred == yTest)
+    print(f"Accuracy: {accuracy:.4f}")
+
+
+if __name__ == "__main__":
+    main()
