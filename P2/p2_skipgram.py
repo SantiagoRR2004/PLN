@@ -188,6 +188,10 @@ class Trainer:
                         + sentence[i + 1 : min(i + self.window_size + 1, len(sentence))]
                     )
 
+                    # Skip if window is empty (can happen after subsampling)
+                    if len(window) == 0:
+                        continue
+
                     pos_score, neg_score = self.skipgram(centralToken, window)
 
                     """
@@ -263,6 +267,48 @@ class Trainer:
         )
         self.contextEmbeddings[negativeSamples] += (
             self.lr * -neg_score[:, np.newaxis] * self.centralEmbeddings[centralToken]
+        )
+
+        return pos_score, neg_score
+
+    def cbow(self, centralToken, window):
+        # Calcular el embedding promedio del contexto
+        contextVector = np.mean(self.contextEmbeddings[window], axis=0)
+
+        # Producto escalar entre el vector del contexto y el embedding del token central
+        scalar = np.dot(contextVector, self.centralEmbeddings[centralToken].T)
+
+        # Pasar el resultado por la función sigmoid, obteniendo pos_score
+        pos_score = sigmoid(scalar)
+
+        """
+        Muestra positiva: actualizar las embeddings del contexto y del token central
+        usando el LR, (1 - pos_score) y la embedding del otro.
+        """
+        grad = self.lr * (1 - pos_score) * self.centralEmbeddings[centralToken]
+        self.contextEmbeddings[window] += grad / len(window)
+
+        self.centralEmbeddings[centralToken] += (
+            self.lr * (1 - pos_score) * contextVector
+        )
+
+        # Muestras negativas
+        # Obtener muestras negativas para el token central
+        negativeSamples = self.sample_neg(forbidden=window + [centralToken])
+
+        # Calcular puntuación negativa
+        neg_score = sigmoid(
+            np.dot(contextVector, self.centralEmbeddings[negativeSamples].T)
+        )
+
+        # Actualizar embeddings para las muestras negativas
+        grad_neg = self.lr * (-neg_score)
+        self.contextEmbeddings[window] += np.sum(
+            grad_neg[:, np.newaxis] * self.centralEmbeddings[negativeSamples], axis=0
+        ) / len(window)
+
+        self.centralEmbeddings[negativeSamples] += (
+            grad_neg[:, np.newaxis] * contextVector
         )
 
         return pos_score, neg_score
