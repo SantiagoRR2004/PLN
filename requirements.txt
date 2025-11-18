@@ -3,4 +3,5 @@ matplotlib
 tdqm
 datasets
 transformers
+transformers[torch]
 torch
