@@ -71,6 +71,7 @@ class Trainer:
         self.rng = rng
         self.embedding_dim = embedding_dim
         self.window_size = window_size
+        self.window_size_initial = window_size
         self.epochs = epochs
         self.lr = lr
         self.lr_min_factor = lr_min_factor
@@ -191,7 +192,6 @@ class Trainer:
                         sentence[max(i - self.window_size, 0) : i]
                         + sentence[i + 1 : min(i + self.window_size + 1, len(sentence))]
                     )
-
                     # Skip if window is empty (can happen after subsampling)
                     if len(window) == 0:
                         continue
@@ -206,7 +206,9 @@ class Trainer:
                     con tamaños que varíen aleatoriamente dentro
                     del rango de la ventana estática original.
                     """
-                    self.window_size = self.rng.integers(1, self.window_size + 1)
+                    self.window_size = self.rng.integers(
+                        1, self.window_size_initial + 1
+                    )
 
                     # Criterion: entropy loss
                     loss += -np.sum(np.log(pos_score + 1e-10)) - np.sum(
