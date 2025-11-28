@@ -249,14 +249,13 @@ class Trainer:
         token contexto usando el LR, `(1 - pos_score)` y la embedding
         (¡original!) del otro token.
         """
+        originalCentralEmbedding = self.centralEmbeddings[centralToken].copy()
         self.centralEmbeddings[centralToken] += self.lr * np.sum(
             (1 - pos_score)[:, np.newaxis] * self.contextEmbeddings[window],
             axis=0,
         )
         self.contextEmbeddings[window] += (
-            self.lr
-            * (1 - pos_score)[:, np.newaxis]
-            * self.centralEmbeddings[centralToken]
+            self.lr * (1 - pos_score)[:, np.newaxis] * originalCentralEmbedding
         )
 
         # Muestras negativas
@@ -266,18 +265,18 @@ class Trainer:
         # Ahora `pos_score` es `neg_score`
         neg_score = sigmoid(
             np.dot(
-                self.centralEmbeddings[centralToken],
+                originalCentralEmbedding,
                 self.contextEmbeddings[negativeSamples].T,
             )
         )
 
         # Se usa `-neg_score` para actualizar las embeddings.
         self.centralEmbeddings[centralToken] += self.lr * np.sum(
-            (-neg_score)[:, np.newaxis] * self.contextEmbeddings[negativeSamples],
+            -neg_score[:, np.newaxis] * self.contextEmbeddings[negativeSamples],
             axis=0,
         )
         self.contextEmbeddings[negativeSamples] += (
-            self.lr * -neg_score[:, np.newaxis] * self.centralEmbeddings[centralToken]
+            self.lr * -neg_score[:, np.newaxis] * originalCentralEmbedding
         )
 
         return pos_score, neg_score
@@ -360,7 +359,6 @@ def dump_embeddings(
 
 
 def print_similar_embeddings(bpe: ByteLevelBPE, E: np.ndarray, top_k: int = 10):
-
     # First, identify which tokens to keep
     valid_token_ids = []
     for token_id in bpe.vocab.values():
@@ -401,13 +399,13 @@ def main():
     # For the final graph
     losses = {}
 
-    for m in ["cbow", "skipgram"]:
+    for m in ["skipgram"]:
         trainer = Trainer(
             corpus_fpath="P0/tiny_cc_news.txt",
             rng=np.random.default_rng(42),
             embedding_dim=100,
             window_size=5,
-            epochs=5,
+            epochs=20,
             lr=0.05,
             lr_min_factor=0.0001,
             neg_samples=5,
