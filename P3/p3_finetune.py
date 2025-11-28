@@ -5,13 +5,11 @@ from transformers import (
     Trainer,
 )
 from datasets import load_dataset, DatasetDict
+import utils
 import os
 
 # Obtain the current directory
 currentDirectory = os.path.dirname(os.path.abspath(__file__))
-
-# TODO: Check if GPU is available and use it
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 
 def obtainDataset() -> DatasetDict:
@@ -34,6 +32,9 @@ def obtainDataset() -> DatasetDict:
 
 
 if __name__ == "__main__":
+    # Check if GPU is available and use it
+    utils.canUseGPU()
+
     # Load the dataset
     dataset = obtainDataset()
 
