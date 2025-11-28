@@ -214,8 +214,8 @@ def main() -> None:
 
         # Split data into training and testing sets
         splitIndex = int(0.8 * len(features))
-        XTrain, XTest = features[:splitIndex], features[splitIndex:]
-        yTrain, yTest = labels[:splitIndex], labels[splitIndex:]
+        XTrain, XTest = features[splitIndex:], features[:splitIndex]
+        yTrain, yTest = labels[splitIndex:], labels[:splitIndex]
 
         model = LogisticRegression()
         model.fit(XTrain, yTrain)
