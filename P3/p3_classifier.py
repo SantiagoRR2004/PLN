@@ -68,7 +68,7 @@ def obtainEmbeddings(
 # 2: Implementa la clase LogisticRegression con los siguientes componentes:
 class LogisticRegression:
 
-    def __init__(self, learningRate: float = 0.01, epochs: int = 100000) -> None:
+    def __init__(self, learningRate: float = 0.01, epochs: int = 100) -> None:
         """
         Campos para almacenar los pesos, sesgo y learning rate.
 
@@ -214,8 +214,10 @@ def main() -> None:
 
         # Split data into training and testing sets
         splitIndex = int(0.8 * len(features))
-        XTrain, XTest = features[splitIndex:], features[:splitIndex]
-        yTrain, yTest = labels[splitIndex:], labels[:splitIndex]
+        XTrain, XTest = features[-splitIndex:], features[:-splitIndex]
+        yTrain, yTest = labels[-splitIndex:], labels[:-splitIndex]
+
+        assert len(XTrain) == splitIndex
 
         model = LogisticRegression()
         model.fit(XTrain, yTrain)
