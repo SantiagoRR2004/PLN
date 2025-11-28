@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from P1 import ByteLevelBPE
 import numpy as np
+import p3_finetune
 import pickle
 import os
 
@@ -226,6 +227,29 @@ def main() -> None:
         print(f"{mode.capitalize()} Accuracy: {accuracy:.4f}")
 
         losses[mode] = model.losses
+
+        # Now the bigger dataset
+        dataset = p3_finetune.obtainDataset()
+
+        # Tokenize and embed XTrain
+        # TODO: Use data that contains both positive and negative
+        XTrain = np.array(
+            list(
+                map(
+                    lambda text: obtainEmbeddings(text, embeddings),
+                    dataset["train"]["text"][:100],
+                )
+            )
+        )
+        yTrain = np.array(dataset["train"]["label"][:100])
+
+        XTest, yTest = features, labels
+
+        model = LogisticRegression()
+        model.fit(XTrain, yTrain)
+        yPred = model.predict(XTest)
+        accuracy = np.mean(yPred == yTest)
+        print(f"{mode.capitalize()} Accuracy: {accuracy:.4f}")
 
     # Plotting the losses
     plt.xlabel("Epoch")
