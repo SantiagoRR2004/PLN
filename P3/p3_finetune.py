@@ -45,6 +45,7 @@ if __name__ == "__main__":
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
 
     for param in model.bert.parameters():
+        # TODO Make sure this actually freezes the correct layers
         param.requires_grad = False
 
     # 2: Tokeniza el dataset
@@ -93,3 +94,4 @@ if __name__ == "__main__":
     trainer.train()
     evalResults = trainer.evaluate()
     print(evalResults)
+    # TODO Make sure it uses obtainAccuracy

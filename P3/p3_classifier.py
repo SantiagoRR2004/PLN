@@ -3,6 +3,7 @@ from P1 import ByteLevelBPE
 import numpy as np
 import p3_finetune
 import pickle
+import utils
 import os
 
 currentDirectory = os.path.dirname(os.path.abspath(__file__))
@@ -232,16 +233,11 @@ def main() -> None:
         dataset = p3_finetune.obtainDataset()
 
         # Tokenize and embed XTrain
-        # TODO: Use data that contains both positive and negative
-        XTrain = np.array(
-            list(
-                map(
-                    lambda text: obtainEmbeddings(text, embeddings),
-                    dataset["train"]["text"][:100],
-                )
-            )
+        XTrain = utils.obtainEmbeddingsParallelism(
+            dataset["train"]["text"],
+            embeddings,
         )
-        yTrain = np.array(dataset["train"]["label"][:100])
+        yTrain = np.array(dataset["train"]["label"])
 
         XTest, yTest = features, labels
 
@@ -249,7 +245,7 @@ def main() -> None:
         model.fit(XTrain, yTrain)
         yPred = model.predict(XTest)
         accuracy = np.mean(yPred == yTest)
-        print(f"{mode.capitalize()} Accuracy: {accuracy:.4f}")
+        print(f"{mode.capitalize()}Big Accuracy: {accuracy:.4f}")
 
     # Plotting the losses
     plt.xlabel("Epoch")

@@ -1,3 +1,6 @@
+from concurrent.futures import ProcessPoolExecutor
+import p3_classifier
+import numpy as np
 import torch
 import os
 
@@ -34,6 +37,25 @@ def canUseGPU() -> str:
     torch.set_default_device("cpu")
     torch.cuda.is_available = lambda: False
     torch.cuda.is_available()
+
+
+def obtainEmbeddingsParallelism(
+    texts: list[str],
+    embeddings: np.ndarray,
+) -> np.ndarray:
+    futures = []
+    with ProcessPoolExecutor() as executor:
+        for text in texts:
+            futures.append(
+                executor.submit(
+                    p3_classifier.obtainEmbeddings,
+                    text,
+                    embeddings,
+                )
+            )
+
+    results = [future.result() for future in futures]
+    return np.array(results)
 
 
 if __name__ == "__main__":
