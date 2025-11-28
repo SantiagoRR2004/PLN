@@ -235,51 +235,60 @@ class Trainer:
         return self.centralEmbeddings, self.contextEmbeddings
 
     def skipgram(self, centralToken, window):
-        # Calcular el producto escalar entre las embeddings del token central y token de contexto.
-        scalar = np.dot(
-            self.centralEmbeddings[centralToken],
-            self.contextEmbeddings[window].T,
-        )
-
-        # Pasar el resultado por la función `sigmoid`, obteniendo `pos_score`.
-        pos_score = sigmoid(scalar)
-
         """
         Muestra positiva: actualizar las embeddings del token central y
         token contexto usando el LR, `(1 - pos_score)` y la embedding
         (¡original!) del otro token.
         """
+
+        # Listas para acumular los scores y devolverlos al final
+        pos_scores = []
+        neg_scores = []
+
         originalCentralEmbedding = self.centralEmbeddings[centralToken].copy()
-        self.centralEmbeddings[centralToken] += self.lr * np.sum(
-            (1 - pos_score)[:, np.newaxis] * self.contextEmbeddings[window],
-            axis=0,
-        )
-        self.contextEmbeddings[window] += (
-            self.lr * (1 - pos_score)[:, np.newaxis] * originalCentralEmbedding
-        )
 
-        # Muestras negativas
-        # Obtener muestras negativas para el token central
-        negativeSamples = self.sample_neg(forbidden=window + [centralToken])
-        # Para cada una, realizar un proceso similar al de la muestra positiva
-        # Ahora `pos_score` es `neg_score`
-        neg_score = sigmoid(
-            np.dot(
-                originalCentralEmbedding,
-                self.contextEmbeddings[negativeSamples].T,
+        # Acumulador para el gradiente del token central
+        centralGradient = np.zeros_like(originalCentralEmbedding)
+
+        for contextToken in window:
+            scalar = np.dot(
+                originalCentralEmbedding, self.contextEmbeddings[contextToken]
             )
-        )
+            pos_score = sigmoid(scalar)
+            pos_scores.append(pos_score)
 
-        # Se usa `-neg_score` para actualizar las embeddings.
-        self.centralEmbeddings[centralToken] += self.lr * np.sum(
-            -neg_score[:, np.newaxis] * self.contextEmbeddings[negativeSamples],
-            axis=0,
-        )
-        self.contextEmbeddings[negativeSamples] += (
-            self.lr * -neg_score[:, np.newaxis] * originalCentralEmbedding
-        )
+            grad_context = self.lr * (1 - pos_score) * originalCentralEmbedding
 
-        return pos_score, neg_score
+            centralGradient += (
+                self.lr * (1 - pos_score) * self.contextEmbeddings[contextToken]
+            )
+
+            self.contextEmbeddings[contextToken] += grad_context
+
+            # --- Muestras NEGATIVAS (para solo este par) ---
+
+            negativeSamples = self.sample_neg(forbidden=window + [centralToken])
+
+            neg_embs = self.contextEmbeddings[negativeSamples]
+            scalar_neg = np.dot(originalCentralEmbedding, neg_embs.T)
+            neg_score = sigmoid(scalar_neg)
+
+            # Guardamos todos los scores negativos
+            neg_scores.extend(neg_score)
+
+            grad_negs = self.lr * -neg_score[:, np.newaxis] * originalCentralEmbedding
+
+            self.contextEmbeddings[negativeSamples] += grad_negs
+
+            # Acumular gradiente para el Central desde los negativos
+            # Sumamos el aporte de todos los negativos al gradiente central
+            centralGradient += np.sum(
+                self.lr * -neg_score[:, np.newaxis] * neg_embs, axis=0
+            )
+
+        self.centralEmbeddings[centralToken] += centralGradient
+
+        return np.array(pos_scores), np.array(neg_scores)
 
     def cbow(self, centralToken, window):
         # Calcular el embedding promedio del contexto
@@ -399,13 +408,13 @@ def main():
     # For the final graph
     losses = {}
 
-    for m in ["skipgram"]:
+    for m in ["skipgram", "cbow"]:
         trainer = Trainer(
             corpus_fpath="P0/tiny_cc_news.txt",
             rng=np.random.default_rng(42),
             embedding_dim=100,
             window_size=5,
-            epochs=20,
+            epochs=15,
             lr=0.05,
             lr_min_factor=0.0001,
             neg_samples=5,
