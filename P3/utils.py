@@ -2,6 +2,7 @@ from concurrent.futures import ProcessPoolExecutor
 import p3_classifier
 import numpy as np
 import torch
+import tqdm
 import os
 
 
@@ -43,7 +44,28 @@ def obtainEmbeddingsParallelism(
     texts: list[str],
     embeddings: np.ndarray,
 ) -> np.ndarray:
+    """
+    Obtain embeddings for multiple texts in parallel using multiprocessing.
+
+    Args:
+        - texts (list[str]): List of input texts.
+        - embeddings (np.ndarray): The token embeddings matrix.
+
+    Returns:
+        - np.ndarray: A 2D array where each row is the embedding for the corresponding
+                        input text.
+    """
     futures = []
+
+    bar = tqdm.tqdm(
+        total=len(texts),
+        desc=f"Obtaining Embeddings",
+        position=0,
+    )
+
+    def update(*a):
+        bar.update()
+
     with ProcessPoolExecutor() as executor:
         for text in texts:
             futures.append(
@@ -53,6 +75,8 @@ def obtainEmbeddingsParallelism(
                     embeddings,
                 )
             )
+
+        [f.add_done_callback(update) for f in futures]
 
     results = [future.result() for future in futures]
     return np.array(results)

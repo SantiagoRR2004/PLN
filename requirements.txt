@@ -1,6 +1,6 @@
 black
 matplotlib
-tdqm
+tqdm
 datasets
 transformers
 transformers[torch]
