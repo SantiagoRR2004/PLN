@@ -141,7 +141,13 @@ class LogisticRegression:
 
         return -np.mean(positiveLoss + negativeLoss)
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        XEval: np.ndarray = None,
+        yEval: np.ndarray = None,
+    ) -> None:
         """
         Método `fit`, que recibe los datos de entrenamiento y
         optimiza el modelo mediante descenso de gradiente.
@@ -149,6 +155,8 @@ class LogisticRegression:
         Args:
             - X (np.ndarray): Training data of shape (numSamples, numFeatures).
             - y (np.ndarray): True class labels of shape (numSamples,).
+            - XEval (np.ndarray, optional): Evaluation data of shape (numEvalSamples, numFeatures).
+            - yEval (np.ndarray, optional): True class labels for evaluation data of shape (numEvalSamples,).
 
         Returns:
             - None
@@ -157,6 +165,12 @@ class LogisticRegression:
         self.weights = np.zeros(X.shape[1])
 
         self.losses = []
+
+        # For evaluation during training
+        evaluation = XEval is not None and yEval is not None
+        if evaluation:
+            self.evalLosses = []
+            self.accuracies = []
 
         for _ in range(self.epochs):
             # Get predictions
@@ -167,6 +181,18 @@ class LogisticRegression:
 
             # Compute and store loss
             self.losses.append(self.compute_loss(yPred, y))
+
+            # Evaluation
+            if evaluation:
+                yEvalPred = self.forward(XEval)
+
+                # Compute loss on evaluation set
+                evalLoss = self.compute_loss(yEvalPred, yEval)
+                self.evalLosses.append(evalLoss)
+
+                # Compute accuracy
+                yEvalLabels = (yEvalPred >= 0.5).astype(int)
+                self.accuracies.append(np.mean(yEvalLabels == yEval))
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -193,6 +219,7 @@ def main() -> None:
 
     # For the final graph
     losses = {}
+    accuracies = {}
 
     for mode in ["skipgram", "cbow"]:
 
@@ -222,12 +249,14 @@ def main() -> None:
         assert len(XTrain) == splitIndex
 
         model = LogisticRegression()
-        model.fit(XTrain, yTrain)
+        model.fit(XTrain, yTrain, XEval=XTest, yEval=yTest)
         yPred = model.predict(XTest)
         accuracy = np.mean(yPred == yTest)
         print(f"{mode.capitalize()} Accuracy: {accuracy:.4f}")
 
         losses[mode] = model.losses
+        losses[mode + "Eval"] = model.evalLosses
+        accuracies[mode] = model.accuracies
 
         # Now the bigger dataset
         dataset = p3_finetune.obtainDataset()
@@ -242,10 +271,14 @@ def main() -> None:
         XTest, yTest = features, labels
 
         model = LogisticRegression()
-        model.fit(XTrain, yTrain)
+        model.fit(XTrain, yTrain, XEval=XTest, yEval=yTest)
         yPred = model.predict(XTest)
         accuracy = np.mean(yPred == yTest)
         print(f"{mode.capitalize()}Big Accuracy: {accuracy:.4f}")
+
+        losses[mode + "Big"] = model.losses
+        losses[mode + "BigEval"] = model.evalLosses
+        accuracies[mode + "Big"] = model.accuracies
 
     # Plotting the losses
     plt.xlabel("Epoch")
@@ -255,6 +288,17 @@ def main() -> None:
         plt.plot(losses[mode], label=f"{mode.capitalize()}")
     plt.legend()
     plt.savefig(os.path.join(currentDirectory, "loss.png"))
+    plt.clf()
+
+    # Plotting the accuracies
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Evaluation Accuracy Sentiment Analysis")
+    for mode in accuracies:
+        plt.plot(accuracies[mode], label=f"{mode.capitalize()}")
+    plt.legend()
+    plt.savefig(os.path.join(currentDirectory, "accuracy.png"))
+    plt.clf()
 
 
 if __name__ == "__main__":
