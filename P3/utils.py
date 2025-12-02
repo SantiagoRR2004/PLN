@@ -43,6 +43,7 @@ def canUseGPU() -> str:
 def obtainEmbeddingsParallelism(
     texts: list[str],
     embeddings: np.ndarray,
+    name: str = "Obtaining",
 ) -> np.ndarray:
     """
     Obtain embeddings for multiple texts in parallel using multiprocessing.
@@ -50,6 +51,7 @@ def obtainEmbeddingsParallelism(
     Args:
         - texts (list[str]): List of input texts.
         - embeddings (np.ndarray): The token embeddings matrix.
+        - name (str): Name for the progress bar.
 
     Returns:
         - np.ndarray: A 2D array where each row is the embedding for the corresponding
@@ -59,7 +61,7 @@ def obtainEmbeddingsParallelism(
 
     bar = tqdm.tqdm(
         total=len(texts),
-        desc=f"Obtaining Embeddings",
+        desc=f"{name} Embeddings",
         position=0,
     )
 

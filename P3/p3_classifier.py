@@ -217,9 +217,11 @@ def main() -> None:
     """
     sentimentFile = os.path.join(currentDirectory, "sentiment_analysis.tsv")
 
+    modes = ["skipgram", "cbow"]
+
     # Load embeddings
     embeddings = {}
-    for mode in ["skipgram", "cbow"]:
+    for mode in modes:
         embeddings[mode] = loadEmbeddings(
             filePath=os.path.join(
                 os.path.dirname(currentDirectory), f"{mode}_embeddings.txt"
@@ -235,10 +237,11 @@ def main() -> None:
         labels = list(map(int, labels))
         labels = np.array(labels)
 
-    for mode in ["skipgram", "cbow"]:
+    for mode in modes:
         features = utils.obtainEmbeddingsParallelism(
             texts,
             embeddings[mode],
+            name="Basic " + mode.capitalize(),
         )
 
         # Split data into training and testing sets
@@ -248,7 +251,7 @@ def main() -> None:
 
         assert len(XTrain) == splitIndex
 
-        datasets["Basic " + mode.capitalize()] = {
+        datasets["Basic " + mode] = {
             "XTrain": XTrain,
             "yTrain": yTrain,
             "XTest": XTest,
@@ -259,11 +262,12 @@ def main() -> None:
     IMDbDataset = p3_finetune.obtainDataset()
 
     # Only the train
-    for mode in ["skipgram", "cbow"]:
+    for mode in modes:
         # Tokenize and embed XTrain
         XTrain = utils.obtainEmbeddingsParallelism(
             IMDbDataset["train"]["text"],
             embeddings[mode],
+            name="IMDb Train " + mode.capitalize(),
         )
         yTrain = np.array(IMDbDataset["train"]["label"])
 
@@ -274,7 +278,7 @@ def main() -> None:
             (datasets["Basic " + mode]["yTest"], datasets["Basic " + mode]["yTrain"])
         )
 
-        datasets["IMDb " + mode.capitalize()] = {
+        datasets["IMDb " + mode] = {
             "XTrain": XTrain,
             "yTrain": yTrain,
             "XTest": XTest,
@@ -306,7 +310,7 @@ def main() -> None:
     plt.ylabel("Loss")
     plt.title("Training Loss Sentiment Analysis")
     for mode in losses:
-        plt.plot(losses[mode], label=f"{mode}")
+        plt.plot(losses[mode], label=f"{mode.title()}")
     plt.legend()
     plt.savefig(os.path.join(currentDirectory, "loss.png"))
     plt.clf()
@@ -316,7 +320,7 @@ def main() -> None:
     plt.ylabel("Accuracy")
     plt.title("Evaluation Accuracy Sentiment Analysis")
     for mode in accuracies:
-        plt.plot(accuracies[mode], label=f"{mode}")
+        plt.plot(accuracies[mode], label=f"{mode.title()}")
     plt.legend()
     plt.savefig(os.path.join(currentDirectory, "accuracy.png"))
     plt.clf()
