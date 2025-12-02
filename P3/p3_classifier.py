@@ -217,29 +217,29 @@ def main() -> None:
     """
     sentimentFile = os.path.join(currentDirectory, "sentiment_analysis.tsv")
 
-    # For the final graph
-    losses = {}
-    accuracies = {}
-
+    # Load embeddings
+    embeddings = {}
     for mode in ["skipgram", "cbow"]:
-
-        features = []
-        labels = []
-        embeddings = loadEmbeddings(
+        embeddings[mode] = loadEmbeddings(
             filePath=os.path.join(
                 os.path.dirname(currentDirectory), f"{mode}_embeddings.txt"
             )
         )
 
-        with open(sentimentFile, "r", encoding="utf-8") as f:
-            for line in f:
-                text, label = line.strip().split("\t")
-                embedding = obtainEmbeddings(text, embeddings)
-                features.append(embedding)
-                labels.append(int(label))
+    datasets = {}
 
-        features = np.array(features)
+    # The basic dataset
+    with open(sentimentFile, "r", encoding="utf-8") as f:
+        lines = map(str.strip, f)
+        texts, labels = zip(*[line.split("\t") for line in lines])
+        labels = list(map(int, labels))
         labels = np.array(labels)
+
+    for mode in ["skipgram", "cbow"]:
+        features = utils.obtainEmbeddingsParallelism(
+            texts,
+            embeddings[mode],
+        )
 
         # Split data into training and testing sets
         splitIndex = int(0.8 * len(features))
@@ -248,44 +248,65 @@ def main() -> None:
 
         assert len(XTrain) == splitIndex
 
-        model = LogisticRegression()
-        model.fit(XTrain, yTrain, XEval=XTest, yEval=yTest)
-        yPred = model.predict(XTest)
-        accuracy = np.mean(yPred == yTest)
-        print(f"{mode.capitalize()} Accuracy: {accuracy:.4f}")
+        datasets["Basic " + mode.capitalize()] = {
+            "XTrain": XTrain,
+            "yTrain": yTrain,
+            "XTest": XTest,
+            "yTest": yTest,
+        }
 
-        losses[mode] = model.losses
-        losses[mode + "Eval"] = model.evalLosses
-        accuracies[mode] = model.accuracies
+    # The IMDb dataset
+    IMDbDataset = p3_finetune.obtainDataset()
 
-        # Now the bigger dataset
-        dataset = p3_finetune.obtainDataset()
-
+    # Only the train
+    for mode in ["skipgram", "cbow"]:
         # Tokenize and embed XTrain
         XTrain = utils.obtainEmbeddingsParallelism(
-            dataset["train"]["text"],
-            embeddings,
+            IMDbDataset["train"]["text"],
+            embeddings[mode],
         )
-        yTrain = np.array(dataset["train"]["label"])
+        yTrain = np.array(IMDbDataset["train"]["label"])
 
-        XTest, yTest = features, labels
+        XTest = np.concatenate(
+            (datasets["Basic " + mode]["XTest"], datasets["Basic " + mode]["XTrain"])
+        )
+        yTest = np.concatenate(
+            (datasets["Basic " + mode]["yTest"], datasets["Basic " + mode]["yTrain"])
+        )
 
+        datasets["IMDb " + mode.capitalize()] = {
+            "XTrain": XTrain,
+            "yTrain": yTrain,
+            "XTest": XTest,
+            "yTest": yTest,
+        }
+
+    # For the final graph
+    losses = {}
+    accuracies = {}
+
+    for datasetName in datasets:
         model = LogisticRegression()
-        model.fit(XTrain, yTrain, XEval=XTest, yEval=yTest)
-        yPred = model.predict(XTest)
-        accuracy = np.mean(yPred == yTest)
-        print(f"{mode.capitalize()}Big Accuracy: {accuracy:.4f}")
+        model.fit(
+            datasets[datasetName]["XTrain"],
+            datasets[datasetName]["yTrain"],
+            XEval=datasets[datasetName]["XTest"],
+            yEval=datasets[datasetName]["yTest"],
+        )
+        yPred = model.predict(datasets[datasetName]["XTest"])
+        accuracy = np.mean(yPred == datasets[datasetName]["yTest"])
+        print(f"{datasetName} Accuracy: {accuracy:.4f}")
 
-        losses[mode + "Big"] = model.losses
-        losses[mode + "BigEval"] = model.evalLosses
-        accuracies[mode + "Big"] = model.accuracies
+        losses[datasetName] = model.losses
+        losses[datasetName + " Eval"] = model.evalLosses
+        accuracies[datasetName] = model.accuracies
 
     # Plotting the losses
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.title("Training Loss Sentiment Analysis")
     for mode in losses:
-        plt.plot(losses[mode], label=f"{mode.capitalize()}")
+        plt.plot(losses[mode], label=f"{mode}")
     plt.legend()
     plt.savefig(os.path.join(currentDirectory, "loss.png"))
     plt.clf()
@@ -295,7 +316,7 @@ def main() -> None:
     plt.ylabel("Accuracy")
     plt.title("Evaluation Accuracy Sentiment Analysis")
     for mode in accuracies:
-        plt.plot(accuracies[mode], label=f"{mode.capitalize()}")
+        plt.plot(accuracies[mode], label=f"{mode}")
     plt.legend()
     plt.savefig(os.path.join(currentDirectory, "accuracy.png"))
     plt.clf()
