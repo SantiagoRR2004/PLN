@@ -246,7 +246,8 @@ def main() -> None:
         )
 
         # Split data into training and testing sets
-        splitIndex = int(0.8 * len(features))
+        # There needs to be 50 samples in the training set
+        splitIndex = 50
         XTrain, XTest = features[-splitIndex:], features[:-splitIndex]
         yTrain, yTest = labels[-splitIndex:], labels[:-splitIndex]
 
@@ -280,7 +281,38 @@ def main() -> None:
             (datasets["Basic " + mode]["yTest"], datasets["Basic " + mode]["yTrain"])
         )
 
-        datasets["IMDb " + mode] = {
+        datasets["IMDb Train " + mode] = {
+            "XTrain": XTrain,
+            "yTrain": yTrain,
+            "XTest": XTest,
+            "yTest": yTest,
+        }
+
+    # The full IMDb dataset
+    for mode in modes:
+        # Tokenize and embed XTest
+        XTrain = np.concatenate(
+            (
+                datasets["IMDb Train " + mode]["XTrain"],
+                utils.obtainEmbeddingsParallelism(
+                    IMDbDataset["test"]["text"],
+                    embeddings[mode],
+                    name="IMDb Test " + mode.capitalize(),
+                    filename=f"{mode}_imdb_test.npy",
+                ),
+            )
+        )
+        yTrain = np.concatenate(
+            (
+                datasets["IMDb Train " + mode]["yTrain"],
+                np.array(IMDbDataset["test"]["label"]),
+            )
+        )
+
+        XTest = datasets["IMDb Train " + mode]["XTest"]
+        yTest = datasets["IMDb Train " + mode]["yTest"]
+
+        datasets["IMDb Whole " + mode] = {
             "XTrain": XTrain,
             "yTrain": yTrain,
             "XTest": XTest,
