@@ -1,9 +1,10 @@
 .venv/
 __pycache__
 
-# Pickled files
+# Pickled and other files
 *.pkl
 *_embeddings.txt
+*.npy
 
 # The graphs
 *.png

@@ -242,6 +242,7 @@ def main() -> None:
             texts,
             embeddings[mode],
             name="Basic " + mode.capitalize(),
+            filename=f"{mode}_basic.npy",
         )
 
         # Split data into training and testing sets
@@ -268,6 +269,7 @@ def main() -> None:
             IMDbDataset["train"]["text"],
             embeddings[mode],
             name="IMDb Train " + mode.capitalize(),
+            filename=f"{mode}_imdb_train.npy",
         )
         yTrain = np.array(IMDbDataset["train"]["label"])
 

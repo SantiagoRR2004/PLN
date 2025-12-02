@@ -5,6 +5,8 @@ import torch
 import tqdm
 import os
 
+currentDirectory = os.path.dirname(os.path.abspath(__file__))
+
 
 def canUseGPU() -> str:
     """
@@ -44,6 +46,7 @@ def obtainEmbeddingsParallelism(
     texts: list[str],
     embeddings: np.ndarray,
     name: str = "Obtaining",
+    filename: str = None,
 ) -> np.ndarray:
     """
     Obtain embeddings for multiple texts in parallel using multiprocessing.
@@ -52,11 +55,17 @@ def obtainEmbeddingsParallelism(
         - texts (list[str]): List of input texts.
         - embeddings (np.ndarray): The token embeddings matrix.
         - name (str): Name for the progress bar.
+        - filename (str): Optional filename to save/load embeddings.
 
     Returns:
         - np.ndarray: A 2D array where each row is the embedding for the corresponding
                         input text.
     """
+    if filename is not None:
+        filePath = os.path.join(os.path.dirname(currentDirectory), filename)
+        if os.path.exists(filePath):
+            return np.load(filePath)
+
     futures = []
 
     bar = tqdm.tqdm(
@@ -81,7 +90,13 @@ def obtainEmbeddingsParallelism(
         [f.add_done_callback(update) for f in futures]
 
     results = [future.result() for future in futures]
-    return np.array(results)
+    results = np.array(results)
+
+    # Save to file if filename is provided
+    if filename is not None:
+        np.save(filePath, results)
+
+    return results
 
 
 if __name__ == "__main__":

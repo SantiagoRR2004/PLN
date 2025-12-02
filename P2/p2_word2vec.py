@@ -356,6 +356,15 @@ def dump_embeddings(
     Returns:
         - None
     """
+    # Delete all the files that start with the mode
+    modeName = os.path.basename(file_path).split(".")[0].split("_")[0]
+
+    fileNames = [
+        f for f in os.listdir(os.path.dirname(file_path)) if f.startswith(modeName)
+    ]
+    for f in fileNames:
+        os.remove(os.path.join(os.path.dirname(file_path), f))
+
     with open(file_path, "w", encoding="utf-8") as f:
         vocab_size, embedding_dim = E.shape
         f.write(f"{vocab_size} {embedding_dim}\n")
