@@ -291,21 +291,24 @@ def main() -> None:
     # The full IMDb dataset
     for mode in modes:
         # Tokenize and embed XTest
+        XTestIMDb = utils.obtainEmbeddingsParallelism(
+            IMDbDataset["test"]["text"],
+            embeddings[mode],
+            name="IMDb Test " + mode.capitalize(),
+            filename=f"{mode}_imdb_test.npy",
+        )
+        yTestIMDb = np.array(IMDbDataset["test"]["label"])
+
         XTrain = np.concatenate(
             (
                 datasets["IMDb Train " + mode]["XTrain"],
-                utils.obtainEmbeddingsParallelism(
-                    IMDbDataset["test"]["text"],
-                    embeddings[mode],
-                    name="IMDb Test " + mode.capitalize(),
-                    filename=f"{mode}_imdb_test.npy",
-                ),
+                XTestIMDb,
             )
         )
         yTrain = np.concatenate(
             (
                 datasets["IMDb Train " + mode]["yTrain"],
-                np.array(IMDbDataset["test"]["label"]),
+                yTestIMDb,
             )
         )
 
@@ -317,6 +320,13 @@ def main() -> None:
             "yTrain": yTrain,
             "XTest": XTest,
             "yTest": yTest,
+        }
+
+        datasets["IMDb " + mode] = {
+            "XTrain": datasets["IMDb Train " + mode]["XTrain"],
+            "yTrain": datasets["IMDb Train " + mode]["yTrain"],
+            "XTest": XTestIMDb,
+            "yTest": yTestIMDb,
         }
 
     # For the final graph
