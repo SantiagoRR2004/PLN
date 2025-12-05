@@ -125,6 +125,17 @@ class Trainer:
         self.ax.clear()
         # Plot the losses
         self.ax.plot(
+            range(1, len(self.positiveLosses) + 1),
+            self.positiveLosses,
+            label="Positive",
+        )
+        self.ax.plot(
+            range(1, len(self.negativeLosses) + 1),
+            self.negativeLosses,
+            label="Negative",
+            color="blue",
+        )
+        self.ax.plot(
             range(1, len(self.losses) + 1), self.losses, label="Loss", color="red"
         )
         self.ax.set_xlabel("Epoch")
@@ -168,10 +179,14 @@ class Trainer:
             position=0,
         )
 
+        self.positiveLosses = []
+        self.negativeLosses = []
         self.losses = []
 
         # 1.4: Para cada `epoch` y para cada token en el corpus
         for epoch in range(self.epochs):
+            positiveLoss = 0.0
+            negativeLoss = 0.0
             loss = 0.0
             barEpoch = tqdm.tqdm(
                 total=len(self.corpus),
@@ -211,15 +226,23 @@ class Trainer:
                     )
 
                     # Criterion: entropy loss
-                    loss += -np.sum(np.log(pos_score + 1e-10)) - np.sum(
-                        np.log(1 - neg_score + 1e-10)
-                    )
+                    pos = -np.sum(np.log(pos_score + 1e-10))
+                    neg = -np.sum(np.log(1 - neg_score + 1e-10))
+                    positiveLoss += pos
+                    negativeLoss += neg
+                    loss += pos + neg
 
                 barEpoch.update(1)
                 barTrain.update(1)
 
             # 5: Haz que el LR disminuya progresivamente durante el entrenamiento (linear decay).
             self.lr += (self.lr_min_factor - self.lr) / (self.epochs - epoch)
+            self.positiveLosses.append(
+                positiveLoss / sum(len(samples) for samples in self.corpus)
+            )
+            self.negativeLosses.append(
+                negativeLoss / sum(len(samples) for samples in self.corpus)
+            )
             self.losses.append(loss / sum(len(samples) for samples in self.corpus))
             self.update_plot()
 
@@ -279,7 +302,6 @@ class Trainer:
             self.lr * -neg_score[:, np.newaxis] * originalCentralEmbedding
         )
 
-        # Normalize the scores
         return pos_score, neg_score
 
     def cbow(self, centralToken, window):
@@ -407,6 +429,8 @@ def print_similar_embeddings(bpe: ByteLevelBPE, E: np.ndarray, top_k: int = 10):
 
 def main():
     # For the final graph
+    positiveLosses = {}
+    negativeLosses = {}
     losses = {}
 
     for m in ["skipgram", "cbow"]:
@@ -425,6 +449,8 @@ def main():
         T, C = trainer.train()
 
         losses[m] = trainer.losses
+        positiveLosses[m] = trainer.positiveLosses
+        negativeLosses[m] = trainer.negativeLosses
 
         E = (T + C) / 2.0  # Matriz final de embeddings
         dump_embeddings(
@@ -442,7 +468,17 @@ def main():
     ax.set_xlabel("Epoch")
     ax.set_ylabel("Loss")
     ax.set_title("Loss during Training")
-    for m in losses:
+    for m in ["skipgram", "cbow"]:
+        ax.plot(
+            range(1, len(positiveLosses[m]) + 1),
+            positiveLosses[m],
+            label=f"{m.capitalize()} Positive",
+        )
+        ax.plot(
+            range(1, len(negativeLosses[m]) + 1),
+            negativeLosses[m],
+            label=f"{m.capitalize()} Negative",
+        )
         ax.plot(range(1, len(losses[m]) + 1), losses[m], label=m.capitalize())
     ax.legend()
     plt.savefig(os.path.join(currentDirectory, "loss.png"))
