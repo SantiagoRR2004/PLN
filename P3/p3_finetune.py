@@ -1,3 +1,4 @@
+from transformers.models.bert.modeling_bert import BertForSequenceClassification
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
@@ -42,11 +43,19 @@ if __name__ == "__main__":
     model_name = "prajjwal1/bert-tiny"  # or "distilbert-base-uncased"
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
+    model: BertForSequenceClassification = (
+        AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
+    )
 
-    for param in model.bert.parameters():
-        # TODO Make sure this actually freezes the correct layers
-        param.requires_grad = False
+    for name, param in model.named_parameters():
+
+        # Freeze all BERT layers
+        if name.startswith("bert."):
+            param.requires_grad = False
+
+        # Print the trainable parameters
+        else:
+            print(f"{name}: {param.numel()}")
 
     # 2: Tokeniza el dataset
     tokenizedDataset = dataset.map(
