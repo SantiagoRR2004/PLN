@@ -67,6 +67,63 @@ def obtainEmbeddings(
     return np.mean(embeddings[tokenIds], axis=0)
 
 
+class LearningRateScheduler:
+    """
+    Adaptive learning rate scheduler based on loss progression.
+    """
+
+    def __init__(
+        self,
+        initialLR: float,
+    ) -> None:
+        """
+        Initialize the learning rate scheduler.
+
+        Args:
+            - initialLR (float): Initial learning rate.
+
+        Returns:
+            - None
+        """
+        self.currentLR = initialLR
+
+    def step(self, losses: list) -> float:
+        """
+        Compute the next learning rate based on loss progression.
+
+        Args:
+            - losses (list): List of loss values from training history.
+
+        Returns:
+            - float: Updated learning rate.
+        """
+        if len(losses) == 0:
+            return self.currentLR
+
+        currentLoss = losses[-1]
+
+        return self.currentLR
+
+    def longestDecreasingSuffix(self, nums: list) -> list:
+        """
+        Find the longest amount of losses that have been decreasing from the end.
+
+        Args:
+            - nums (list): List of loss values.
+
+        Returns:
+            - list: The longest decreasing suffix of the input list.
+        """
+        if len(nums) < 2:
+            return nums
+
+        i = len(nums) - 1
+        while i > 0 and nums[i] < nums[i - 1]:
+            i -= 1
+
+        return nums[i:]
+
+
 # 2: Implementa la clase LogisticRegression con los siguientes componentes:
 class LogisticRegression:
 
@@ -75,7 +132,7 @@ class LogisticRegression:
         Campos para almacenar los pesos, sesgo y learning rate.
 
         Args:
-            - learningRate (float): The learning rate for gradient descent.
+            - learningRate (float): The initial learning rate for gradient descent.
             - epochs (int): The number of training epochs.
 
         Returns:
@@ -85,6 +142,10 @@ class LogisticRegression:
         self.bias: float = 0.0
         self.lr = learningRate
         self.epochs = epochs
+
+        self.scheduler = LearningRateScheduler(
+            initialLR=learningRate,
+        )
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         """
@@ -165,6 +226,7 @@ class LogisticRegression:
         self.weights = np.zeros(X.shape[1])
 
         self.losses = []
+        self.learningRates = []  # Track learning rate changes
 
         # For evaluation during training
         evaluation = XEval is not None and yEval is not None
@@ -176,6 +238,11 @@ class LogisticRegression:
             bestBias = self.bias
 
         for _ in range(self.epochs):
+            # Update learning rate based on loss progression
+            self.lr = self.scheduler.step(self.losses)
+
+            self.learningRates.append(self.lr)
+
             # Get predictions
             yPred = self.forward(X)
 
@@ -347,6 +414,7 @@ def main() -> None:
     # For the final graph
     losses = {}
     accuracies = {}
+    learningRates = {}
 
     for datasetName in datasets:
         model = LogisticRegression()
@@ -363,6 +431,7 @@ def main() -> None:
         losses[datasetName] = model.losses
         losses[datasetName + " Eval"] = model.evalLosses
         accuracies[datasetName] = model.accuracies
+        learningRates[datasetName] = model.learningRates
 
     # Plotting the losses
     plt.xlabel("Epoch")
@@ -382,6 +451,16 @@ def main() -> None:
         plt.plot(accuracies[mode], label=f"{mode.title()}")
     plt.legend()
     plt.savefig(os.path.join(currentDirectory, "accuracy.png"))
+    plt.clf()
+
+    # Plotting the learning rates
+    plt.xlabel("Epoch")
+    plt.ylabel("Learning Rate")
+    plt.title("Learning Rate Adaptation")
+    for mode in learningRates:
+        plt.plot(learningRates[mode], label=f"{mode.title()}")
+    plt.legend()
+    plt.savefig(os.path.join(currentDirectory, "learningRate.png"))
     plt.clf()
 
 
