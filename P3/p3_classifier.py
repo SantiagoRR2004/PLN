@@ -432,8 +432,9 @@ def main() -> None:
             "yTest": yTestIMDb,
         }
 
-    # For the final graph
+    # For the final graphs
     losses = {}
+    lossesEval = {}
     accuracies = {}
     learningRates = {}
 
@@ -450,7 +451,7 @@ def main() -> None:
         print(f"{datasetName} Accuracy: {accuracy:.4f}")
 
         losses[datasetName] = model.losses
-        losses[datasetName + " Eval"] = model.evalLosses
+        lossesEval[datasetName] = model.evalLosses
         accuracies[datasetName] = model.accuracies
         learningRates[datasetName] = model.learningRates
 
@@ -462,6 +463,16 @@ def main() -> None:
         plt.plot(losses[mode], label=f"{mode.title()}")
     plt.legend()
     plt.savefig(os.path.join(currentDirectory, "loss.png"))
+    plt.clf()
+
+    # Plotting the evaluation losses
+    plt.xlabel("Epoch")
+    plt.ylabel("Evaluation Loss")
+    plt.title("Evaluation Loss Sentiment Analysis")
+    for mode in lossesEval:
+        plt.plot(lossesEval[mode], label=f"{mode.title()}")
+    plt.legend()
+    plt.savefig(os.path.join(currentDirectory, "lossEval.png"))
     plt.clf()
 
     # Plotting the accuracies
