@@ -442,7 +442,7 @@ def main():
             epochs=15,
             lr=0.05,
             lr_min_factor=0.0001,
-            neg_samples=5,
+            neg_samples=3 if m == "cbow" else 15,
             model=m,
         )
 
