@@ -100,7 +100,28 @@ class LearningRateScheduler:
         if len(losses) == 0:
             return self.currentLR
 
-        currentLoss = losses[-1]
+        # If the last 5 losses are too flat, try to exit stagnation
+        if len(losses) >= 5 and max(losses[-5:]) - min(losses[-5:]) < 1e-4:
+            self.currentLR += 1
+            return self.currentLR
+
+        descendingLosses = self.longestDecreasingSuffix(losses)
+
+        # Need at least 3 points to compute slopes
+        if len(descendingLosses) < 3:
+            return self.currentLR
+
+        slopes = [
+            descendingLosses[i + 1] - descendingLosses[i]
+            for i in range(len(descendingLosses) - 1)
+        ]
+
+        # If it is too close to a straight line, increase by 10%
+        # If it is not, decrease by 10%
+        if np.std(slopes) < 1e-4:
+            self.currentLR *= 1.1  # Increase by 10%
+        else:
+            self.currentLR *= 0.9  # Decrease by 10%
 
         return self.currentLR
 
@@ -127,7 +148,7 @@ class LearningRateScheduler:
 # 2: Implementa la clase LogisticRegression con los siguientes componentes:
 class LogisticRegression:
 
-    def __init__(self, learningRate: float = 0.01, epochs: int = 100) -> None:
+    def __init__(self, learningRate: float = 0.01, epochs: int = 1000) -> None:
         """
         Campos para almacenar los pesos, sesgo y learning rate.
 
