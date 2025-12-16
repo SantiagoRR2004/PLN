@@ -171,6 +171,9 @@ class LogisticRegression:
         if evaluation:
             self.evalLosses = []
             self.accuracies = []
+            bestAccuracy = 0.0
+            bestWeights = self.weights.copy()
+            bestBias = self.bias
 
         for _ in range(self.epochs):
             # Get predictions
@@ -192,7 +195,19 @@ class LogisticRegression:
 
                 # Compute accuracy
                 yEvalLabels = (yEvalPred >= 0.5).astype(int)
-                self.accuracies.append(np.mean(yEvalLabels == yEval))
+                accuracy = np.mean(yEvalLabels == yEval)
+                self.accuracies.append(accuracy)
+
+                # Save best model
+                if accuracy > bestAccuracy:
+                    bestAccuracy = accuracy
+                    bestWeights = self.weights.copy()
+                    bestBias = self.bias
+
+        # Keep best model after evaluation
+        if evaluation:
+            self.weights = bestWeights
+            self.bias = bestBias
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
