@@ -4,7 +4,7 @@ import numpy as np
 
 def viterbi(
     sequence: Iterable[int], start: np.ndarray, A: np.ndarray, B: np.ndarray
-) -> None:
+) -> list[int]:
     """
     Viterbi algorithm implementation for a Hidden Markov Model.
 
@@ -35,22 +35,33 @@ def viterbi(
     # In the first iteration, there are no transitions
     start = (start * B[:, sequence[0]]).ravel()
 
-    for i in range(1, len(sequence)):
-        maxIndex1, maxValue1 = max(enumerate(start * A[:, 0]), key=lambda x: x[1])
-        maxIndex2, maxValue2 = max(enumerate(start * A[:, 1]), key=lambda x: x[1])
-        maxIndex3, maxValue3 = max(enumerate(start * A[:, 2]), key=lambda x: x[1])
+    mostProbable = []
 
-        print(maxIndex1, maxIndex2, maxIndex3)
-        start = (
-            np.array([maxValue1, maxValue2, maxValue3]) * B[:, sequence[i]]
-        ).ravel()
+    for i in range(1, len(sequence)):
+
+        # Multiply the probabilities with the transition matrix
+        mult = start[:, None] * A
+
+        # Get the maximum probabilities and their indices
+        maxIndeces = np.argmax(mult, axis=0)
+        start = (mult[maxIndeces, range(A.shape[1])] * B[:, sequence[i]]).ravel()
+
+        mostProbable.append(maxIndeces)
+
+    finalState = np.argmax(start)
+    optimalPath = [finalState]
+
+    for states in reversed(mostProbable):
+        optimalPath.append(states[optimalPath[-1]])
+
+    return [int(x + 1) for x in optimalPath[::-1]]
 
 
 if __name__ == "__main__":
 
     start = np.array([0.25, 0.5, 0.25])
 
-    sequence = [0, 0, 0, 0, 0]
+    sequence = [0, 0, 0, 0, 1, 1, 0, 1]
 
     A = np.array(
         [
@@ -63,4 +74,4 @@ if __name__ == "__main__":
     B = np.array([[0.5, 0.25, 0.75], [0.5, 0.75, 0.25]]).T
 
     # Run the Viterbi algorithm
-    viterbi(sequence, start, A, B)
+    print(viterbi(sequence, start, A, B))
