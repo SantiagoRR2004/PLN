@@ -1,5 +1,34 @@
 from collections.abc import Iterable
 import numpy as np
+import random
+
+
+def randomViterbi() -> dict:
+    """
+    Generates random parameters for a Hidden Markov Model and an observed sequence.
+
+    Args:
+        - None
+
+    Returns:
+        - dict: A dictionary containing the observed sequence, start probabilities,
+                transition matrix, and emission matrix.
+    """
+    nStates = random.randint(2, 10)
+    nEvents = random.randint(2, 10)
+    seqLength = random.randint(5, 100)
+
+    start = np.random.dirichlet(np.ones(nStates))
+    A = np.array([np.random.dirichlet(np.ones(nStates)) for _ in range(nStates)])
+    B = np.array([np.random.dirichlet(np.ones(nStates)) for _ in range(nEvents)]).T
+    sequence = [random.randint(0, nEvents - 1) for _ in range(seqLength)]
+
+    return {
+        "sequence": sequence,
+        "start": start,
+        "A": A,
+        "B": B,
+    }
 
 
 def viterbi(
